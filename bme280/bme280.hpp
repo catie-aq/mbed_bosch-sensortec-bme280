@@ -141,10 +141,10 @@ public:
 
     BME280(I2C* i2c, I2CAddress address = I2CAddress::Address);
 
+    bool initialize();
+
     int power_off();
     int resume();
-
-    bool initialize();
 
     int read_humidity(float* humidity);
     int read_pressure(float* pressure);

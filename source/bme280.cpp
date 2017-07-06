@@ -29,17 +29,15 @@ BME280::BME280(I2C* i2c, I2CAddress i2cAddress):
     _sensorMode = SensorMode::NORMAL;
 }
 
-bool BME280::read_chip_id(){
-   int8_t chip_id = INIT_VALUE;
-   i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
-   if (chip_id != 0x60){
-       wait_ms(1000);
-       i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
-       return (chip_id != 0x60) ? false : true;
-   }
-   return true;
-}
-
+/*!
+ * @brief Initialize the device
+ *
+ * @param None
+ *
+ * @return
+ *         true on success,
+ *         false on failure
+ */
 bool BME280::initialize(){
    int ret;
    printf("Initializing the BME280...\n");
@@ -64,14 +62,6 @@ bool BME280::initialize(){
  *
  *
  */
-int BME280::read_temperature(float* temperature){
-
-}
-
-/*!
- *
- *
- */
 int BME280::read_pressure(float* pressure){
 
 }
@@ -88,8 +78,39 @@ int BME280::read_humidity(float* humidity){
  *
  *
  */
+int BME280::read_temperature(float* temperature){
+
+}
+
+/*!
+ *
+ *
+ */
 int BME280::read_env_data(bme280_environment_t* env){
 
+}
+
+/*!
+ * @brief Get the device power mode
+ *
+ * @param mode Pointer to the value of power mode
+ *
+ * value | power mode
+ * ------------------
+ *   0   | SLEEP
+ *   1   | FORCED
+ *   2   | NORMAL
+ *
+ * @return 
+ *        0 on success,
+ *        1 on failure
+ */
+int BME280::get_mode(SensorMode* mode){
+    if (mode){
+        *mode = _sensorMode;
+        return SUCCESS;
+    }
+    return FAILURE;
 }
 
 /*!
@@ -124,26 +145,23 @@ int BME280::set_mode(SensorMode mode){
 }
 
 /*!
- * @brief Get the device power mode
+ * @brief Private function to check chip ID correctness
  *
- * @param mode Pointer to the value of power mode
+ * @param None
  *
- * value | power mode
- * ------------------
- *   0   | SLEEP
- *   1   | FORCED
- *   2   | NORMAL
- *
- * @return 
- *        0 on success,
- *        1 on failure
+ * @return
+ *         true on success,
+ *         false on failure
  */
-int BME280::get_mode(SensorMode* mode){
-    if (mode){
-        *mode = _sensorMode;
-        return SUCCESS;
-    }
-    return FAILURE;
+bool BME280::read_chip_id(){
+   int8_t chip_id = INIT_VALUE;
+   i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
+   if (chip_id != 0x60){
+       wait_ms(1000);
+       i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
+       return (chip_id != 0x60) ? false : true;
+   }
+   return true;
 }
 
 /*!
