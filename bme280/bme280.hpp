@@ -17,6 +17,20 @@
 #ifndef BME280_H_
 #define BME280_H_
 
+#include "mbed.h"
+
+/**\name MACROS DEFINITIONS                      */
+#define INIT_VALUE                         0
+/** Bit value manipulation                       */
+#define ZERO                               0
+#define ONE                                1
+#define ONE_BIT_SHIFT                      1        
+#define TWO_BITS_SHIFT                     2        
+#define FOUR_BITS_SHIFT                    4
+#define EIGHT_BITS_SHIFT                   8        
+
+#define CTRL_MEAS__MSK                     0xFC
+
 namespace sixtron {
 
 typedef struct {
@@ -84,7 +98,7 @@ public:
 
         CONTROLHUMID       = 0xF2,
         STATUS             = 0XF3,
-        CONTROL            = 0xF4,
+        CONTROL_MEAS       = 0xF4,
         CONFIG             = 0xF5,
         PRESSURE           = 0xF7,
         TEMP               = 0xFA,
@@ -137,6 +151,9 @@ public:
     int read_temperature(float* temperature);
     int read_env_data(bme280_environment_t* env);
 
+    int set_mode(SensorMode mode);
+    int get_mode(SensorMode* mode);
+
     char chip_id() { return _chipId; }
 
 private:
@@ -146,6 +163,7 @@ private:
     int i2c_write_register(RegisterAddress registerAddress, int8_t value);
 
     char _chipId = 0;
+    SensorMode _sensorMode;
 };
 
 } // namespace sixtron
