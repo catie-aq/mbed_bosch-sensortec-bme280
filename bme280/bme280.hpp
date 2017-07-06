@@ -157,13 +157,14 @@ public:
     char chip_id() { return _chipId; }
 
 private:
+    char _chipId = 0;
+    SensorMode _sensorMode;
+
+    bool read_chip_id();
     int i2c_read_register(RegisterAddress registerAddress, int8_t* value);
     int i2c_read_two_bytes(RegisterAddress registerAddress, int16_t* value);
     int i2c_read_vector(RegisterAddress registerAddress, int16_t value[3]);
     int i2c_write_register(RegisterAddress registerAddress, int8_t value);
-
-    char _chipId = 0;
-    SensorMode _sensorMode;
 };
 
 } // namespace sixtron

@@ -29,6 +29,37 @@ BME280::BME280(I2C* i2c, I2CAddress i2cAddress):
     _sensorMode = SensorMode::NORMAL;
 }
 
+bool BME280::read_chip_id(){
+   int8_t chip_id = INIT_VALUE;
+   i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
+   if (chip_id != 0x60){
+       wait_ms(1000);
+       i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
+       return (chip_id != 0x60) ? false : true;
+   }
+   return true;
+}
+
+bool BME280::initialize(){
+   int ret;
+   printf("Initializing the BME280...\n");
+   if (!read_chip_id)
+       return false;
+   else {
+       printf("Chip ID: 0x%X\n", 0x60);
+       _chipId = 0x60;
+   }
+
+   ret = set_mode(SensorMode::NORMAL);
+   if (ret > 0)
+       return false;
+
+   // wait for chip to wake up
+   wait_ms(300);
+
+   return true;
+}
+
 /*!
  *
  *
