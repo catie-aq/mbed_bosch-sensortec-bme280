@@ -45,7 +45,8 @@ class BME280
 public:
     /* I2C addresses */
     enum class I2CAddress : char {
-        Address = 0x77
+        Address1 = 0x76,
+        Address2 = 0x77
     };
 
     enum class RegisterAddress : char {
@@ -120,7 +121,7 @@ public:
         MS_20    = 0b111,
     };
 
-    BME280(I2C* i2c, I2CAddress address = I2CAddress::Address);
+    BME280(I2C* i2c, I2CAddress address = I2CAddress::Address1);
     bool initialize();
 
     int power_off();
