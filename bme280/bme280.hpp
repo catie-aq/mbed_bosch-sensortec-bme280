@@ -21,6 +21,8 @@
 
 /**\name MACROS DEFINITIONS                      */
 #define INIT_VALUE                         0
+#define SUCCESS                            0
+#define FAILURE                            1
 /** Bit value manipulation                       */
 #define ZERO                               0
 #define ONE                                1
@@ -30,30 +32,7 @@
 #define EIGHT_BITS_SHIFT                   8        
 #define SIXTEEN_BITS_SHIFT                 16
 
-#define CTRL_MEAS__MSK                     0xFC
-
-typedef struct {
-    uint16_t DIG_T1;
-    int16_t  DIG_T2;
-    int16_t  DIG_T3;
-
-    uint16_t DIG_P1;
-    int16_t  DIG_P2;
-    int16_t  DIG_P3;
-    int16_t  DIG_P4;
-    int16_t  DIG_P5;
-    int16_t  DIG_P6;
-    int16_t  DIG_P7;
-    int16_t  DIG_P8;
-    int16_t  DIG_P9;
-
-    uint8_t  DIG_H1;
-    int16_t  DIG_H2;
-    uint8_t  DIG_H3;
-    int16_t  DIG_H4;
-    int16_t  DIG_H5;
-    int8_t   DIG_H6;
-} bme280_calib_t;
+#define CONTROL_MEAS__MSK                  0xFC
 
 typedef struct {
     float humidity;
@@ -160,6 +139,7 @@ public:
 private:
     char _chipId = 0;
     I2C* _i2c;
+    I2CAddress _i2cAddress;
     SensorMode _sensorMode;
 
     bool read_chip_id();
