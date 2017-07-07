@@ -159,6 +159,7 @@ public:
 
 private:
     char _chipId = 0;
+    I2C* _i2c;
     SensorMode _sensorMode;
 
     bool read_chip_id();
