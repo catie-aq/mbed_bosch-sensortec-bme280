@@ -62,14 +62,6 @@ bool BME280::initialize(){
  *
  *
  */
-int BME280::read_pressure(float* pressure){
-
-}
-
-/*!
- *
- *
- */
 int BME280::read_humidity(float* humidity){
 
 }
@@ -78,8 +70,39 @@ int BME280::read_humidity(float* humidity){
  *
  *
  */
-int BME280::read_temperature(float* temperature){
+int BME280::read_pressure(float* pressure){
 
+}
+
+/*!
+ * @brief Read sensor temperature
+ *
+ * @param temperature Pointer to the value of the temperature
+ *
+ * @return
+ *        0 on succes,
+ *        1 on failure
+ *
+ */
+int BME280::read_temperature(float* temperature){
+    int bus_status = SUCCESS;
+    int32_t var1, var2;
+    int32_t adc_T;
+    bus_status = i2c_read_three_bytes(RegisterAddress::TEMP_MSB, &adc_T);
+    if (bus_status != 0)
+        return FAILURE;
+    adc_T >>= 4;
+    var1 = (((adc_T >> 3) - static_cast<int32_t>(bme280_calib_t.DIG_T1 << 1)) * 
+           (static_cast<int32_t>(bme280_calib_.DIG_T2) >> 11));
+    var2 = (((((adc_T >> 4) - (static_cast<int32_t>(bme280_calib_t.dig_T1))) *
+           ((adc_T >> 4) - (static_cast<int32_t>(bme280_calib_t.dig_T1)))) >> 12) *
+           (static_cast<int32_t>(bme280_calib_t.dig_T3))) >> 14;
+    if (temperature){
+        *temperature = ((var1 + var2) * 5 + 128) >> 8;
+        *temperature /= 100;
+        return SUCCESS;
+    }
+    return FAILURE;
 }
 
 /*!
@@ -210,9 +233,38 @@ int BME280::i2c_read_two_bytes(RegisterAddress registerAddress, int16_t* value){
     bus_status = _i2c->read(static_cast<int>(_i2cAddress) << 1, data, 2, false);
     if (bus_status != 0)
         return FAILURE;
-    *value = (int16_t) (data[1] << EIGHT_BITS_SHIFT) | (0xFF & data[0]);
+    *value = static_cast<int16_t>((data[1] << EIGHT_BITS_SHIFT) | (0xFF & data[0]));
     return bus_status;
 }
+
+/*!
+ * @brief Read three successive registers data
+ *
+ * @note This function is useful to read memory-contiguous LSB/MSB/XLSB registers
+ *
+ * @param registerAddress Address of the first register
+ * @param value Pointer to the value read from the registers
+ *
+ * @return 
+ *         0 on success,
+ *         1 on failure
+ */
+int BME280::i2c_read_three_bytes(RegisterAddress registerAddress, int32_t* value){
+    int bus_status = SUCCESS;
+    static char data[3];
+    data[0] = static_cast<char>(registerAddress);
+    bus_status = _i2c->write(static_cast<int>(_i2cAddress) << 1, data, 1, true);
+    if (bus_status != 0)
+        return FAILURE;
+    bus_status = _i2c->read(static_cast<int>(_i2cAddress) << 1, data, 3, false);
+    if (bus_status != 0)
+        return FAILURE;
+    *value = static_cast<int32_t>((data[2] << SIXTEEN_BITS_SHIFT) | 
+                                  (data[1] << EIGHT_BITS_SHIFT) |
+                                  (data[0] & 0xFF));
+    return SUCCESS;
+}
+
 
 /*!
  * @brief Read 16 bits signed vector (3 dimensions) continuous read

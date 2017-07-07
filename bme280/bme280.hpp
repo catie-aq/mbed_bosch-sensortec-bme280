@@ -28,6 +28,7 @@
 #define TWO_BITS_SHIFT                     2        
 #define FOUR_BITS_SHIFT                    4
 #define EIGHT_BITS_SHIFT                   8        
+#define SIXTEEN_BITS_SHIFT                 16
 
 #define CTRL_MEAS__MSK                     0xFC
 
@@ -74,7 +75,7 @@ public:
         CHIP_ID   = 0xD0
         VERSION  = 0xD1
         RESET    = 0xE0
-        /* Calibration register */
+        /* Calibration registers */
         DIG_T1   = 0x88
         DIG_T2   = 0x8A
         DIG_T3   = 0x8D
@@ -101,8 +102,11 @@ public:
         CONTROL_MEAS       = 0xF4,
         CONFIG             = 0xF5,
         PRESSURE           = 0xF7,
-        TEMP               = 0xFA,
-        HUMID              = 0xFD
+        TEMP_MSB           = 0xFA,
+        TEMP_LSB           = 0xFB,
+        TEMP_XLSB          = 0xFC,
+        HUMID_MSB          = 0xFD,
+        HUMID_LSB          = 0xFE
     };
 
     enum class SensorMode : char {
@@ -163,6 +167,7 @@ private:
     bool read_chip_id();
     int i2c_read_register(RegisterAddress registerAddress, int8_t* value);
     int i2c_read_two_bytes(RegisterAddress registerAddress, int16_t* value);
+    int i2c_read_three_bytes(RegisterAddress registerAddress, int32_t* value);
     int i2c_read_vector(RegisterAddress registerAddress, int16_t value[3]);
     int i2c_write_register(RegisterAddress registerAddress, int8_t value);
 };
