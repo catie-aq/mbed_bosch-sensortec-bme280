@@ -61,12 +61,12 @@ typedef struct {
     float temperature;
 } bme280_environment_t;
 
-class bme280
+class BME280
 {
 public:
     /* I2C addresses */
     enum class I2CAddress : char {
-        Adress = 0x77
+        Address = 0x77
     };
 
     enum class RegisterAddress : char {
