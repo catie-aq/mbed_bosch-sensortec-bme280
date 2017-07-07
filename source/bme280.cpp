@@ -15,7 +15,11 @@
  * limitations under the License.
  */
 
-#include "bme280.hpp"
+#include "bme280/bme280.hpp"
+
+namespace {
+
+}
 
 /*!
  * @brief Default BME280 contructor
@@ -94,9 +98,9 @@ int BME280::read_temperature(float* temperature){
     adc_T >>= 4;
     var1 = (((adc_T >> 3) - static_cast<int32_t>(bme280_calib_t.DIG_T1 << 1)) * 
            (static_cast<int32_t>(bme280_calib_.DIG_T2) >> 11));
-    var2 = (((((adc_T >> 4) - (static_cast<int32_t>(bme280_calib_t.dig_T1))) *
-           ((adc_T >> 4) - (static_cast<int32_t>(bme280_calib_t.dig_T1)))) >> 12) *
-           (static_cast<int32_t>(bme280_calib_t.dig_T3))) >> 14;
+    var2 = (((((adc_T >> FOUR_BITS_SHIFT) - (static_cast<int32_t>(bme280_calib_t.DIG_T1))) *
+           ((adc_T >> 4) - (static_cast<int32_t>(bme280_calib_t.DIG_T1)))) >> 12) *
+           (static_cast<int32_t>(bme280_calib_t.DIG_T3))) >> 14;
     if (temperature){
         *temperature = ((var1 + var2) * 5 + 128) >> 8;
         *temperature /= 100;
@@ -157,8 +161,7 @@ int BME280::set_mode(SensorMode mode){
     bus_status = i2c_read_register(RegisterAddress::CTRL_MEAS, &ctrl_meas);
     if (bus_status != 0)
         return FAILURE;
-    ctrl_meas = static_cast<int8_t>((ctrl_meas & CTRL_MEAS__MSK) |
-                static_cast<int8_t>mode);
+    ctrl_meas = static_cast<int8_t>((ctrl_meas & CTRL_MEAS__MSK)|static_cast<int8_t>mode);
     bus_status = i2c_write_register(RegisterAddress::CTRL_MEAS, ctrl_meas);
     if (bus_status == SUCCESS)
         _sensorMode = mode;

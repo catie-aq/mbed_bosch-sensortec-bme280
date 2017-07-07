@@ -32,8 +32,6 @@
 
 #define CTRL_MEAS__MSK                     0xFC
 
-namespace sixtron {
-
 typedef struct {
     uint16_t DIG_T1;
     int16_t  DIG_T2;
@@ -72,13 +70,13 @@ public:
     };
 
     enum class RegisterAddress : char {
-        CHIP_ID   = 0xD0
-        VERSION  = 0xD1
-        RESET    = 0xE0
+        CHIP_ID   = 0xD0,
+        VERSION  = 0xD1,
+        RESET    = 0xE0,
         /* Calibration registers */
-        DIG_T1   = 0x88
-        DIG_T2   = 0x8A
-        DIG_T3   = 0x8D
+        DIG_T1   = 0x88,
+        DIG_T2   = 0x8A,
+        DIG_T3   = 0x8D,
 
         DIG_P1              = 0x8E,
         DIG_P2              = 0x90,
@@ -144,7 +142,6 @@ public:
     };
 
     BME280(I2C* i2c, I2CAddress address = I2CAddress::Address);
-
     bool initialize();
 
     int power_off();
@@ -171,7 +168,5 @@ private:
     int i2c_read_vector(RegisterAddress registerAddress, int16_t value[3]);
     int i2c_write_register(RegisterAddress registerAddress, int8_t value);
 };
-
-} // namespace sixtron
 
 #endif // BME280_H_
