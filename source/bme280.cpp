@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "bme280/bme280.hpp"
+#include "bme280/bme280.h"
 
 namespace {
 
