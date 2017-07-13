@@ -49,18 +49,18 @@
 #define SOFTRESET_CMD                      0xB6
 
 typedef struct {
-    float humidity;
-    float pressure;
-    float temperature;
+    double humidity;
+    double pressure;
+    double temperature;
 } bme280_environment_t;
 
 typedef struct {
     /*! humidity oversampling setting */
-    uint8_t osr_h;
+    uint8_t osrs_h;
     /*! pressure oversampling setting */
-    uint8_t osr_p;
+    uint8_t osrs_p;
     /*! temperature oversampling setting */
-    uint8_t osr_t;
+    uint8_t osrs_t;
     /*! filter coefficient */
     uint8_t filter;
     /*! standby time */
@@ -69,11 +69,11 @@ typedef struct {
 
 typedef struct {
     /*! uncompensated humidity */
-    int32_t humidity;
+    int16_t humidity;
     /*! uncompensated pressure */
-    int32_t pressure;
+    uint32_t pressure;
     /*! uncompensated temperature */
-    int32_t temperature;
+    uint32_t temperature;
 } bme280_uncomp_data_t;
 
 typedef struct {
@@ -110,7 +110,6 @@ public:
 
     enum class RegisterAddress : char {
         CHIP_ID             = 0xD0,
-        VERSION             = 0xD1,
         RESET               = 0xE0,
         /* Calibration registers */
         DIG_T1              = 0x88,
@@ -185,7 +184,7 @@ public:
     BME280(I2C* i2c, I2CAddress address = I2CAddress::Address1);
     bool initialize();
 
-    int power_off();
+    int sleep();
     int resume();
     int softreset();
 
@@ -197,7 +196,15 @@ public:
     int set_power_mode(SensorMode mode);
     int get_power_mode(SensorMode* mode);
 
+    void set_sampling(SensorMode mode = SensorMode::NORMAL,
+                      SensorSampling temp_sampling = SensorSampling::OVERSAMPLING_X16, 
+                      SensorSampling press_sampling = SensorSampling::OVERSAMPLING_X16,
+                      SensorSampling humid_sampling = SensorSampling::OVERSAMPLING_X16,
+                      SensorFilter filter = SensorFilter::OFF,
+                      StandbyDuration duration = StandbyDuration::MS_0_5);
+
     char chip_id() { return _chipId; }
+    bme280_settings_t get_settings() { return settings; };
 
 private:
     char _chipId = 0;
@@ -212,8 +219,10 @@ private:
     bool read_chip_id();
     void get_calib();
     void get_raw_data();
+    int write_power_mode(SensorMode mode);
     int i2c_read_register(RegisterAddress registerAddress, int8_t* value);
     int i2c_read_two_bytes(RegisterAddress registerAddress, int16_t* value);
+    int i2c_read_two_bytes(RegisterAddress registerAddress, int8_t value[2]);
     int i2c_read_three_bytes(RegisterAddress registerAddress, int32_t* value);
     int i2c_read_three_bytes(RegisterAddress registerAddress, int8_t value[3]);
     int i2c_read_vector(RegisterAddress registerAddress, int16_t value[3]);

@@ -24,9 +24,6 @@ namespace {
 
 #define GET_BITS_POS_0(reg_data, bitname) \
     (reg_data & (bitname##__MSK))
-
-#define CONCAT_TWO_BYTES(byte1, byte2) \
-    (byte1 << EIGHT_BITS_SHIFT | byte2)
 }
 
 /*!
@@ -58,18 +55,18 @@ bool BME280::initialize(){
    else {
        printf("Chip ID: 0x%X\n", 0x60);
        _chipId = 0x60;
-       if (softreset() != SUCCESS)
-           return false;
    }
 
-   if (set_power_mode(SensorMode::NORMAL) != SUCCESS)
+   if (softreset() != SUCCESS)
        return false;
+
+   // wait for chip to wake up
+   wait_ms(1);
 
    get_calib();
    get_raw_data();
 
-   // wait for chip to wake up
-   wait_ms(1);
+//    set_sampling();
 
    return true;
 }
@@ -91,7 +88,7 @@ int BME280::softreset(){
 }
 
 /*!
- * Read sensor meadsured humidity
+ * Read sensor measured humidity
  *
  * @param humidity Pointer to the value of the humidity, value in %RH
  *
@@ -127,7 +124,7 @@ int BME280::read_humidity(double* humidity){
  * @param pressure Pointer to the value of the pressure, value in Pa 
  *
  * @return
- *        0 on succes,
+ *        0 on success,
  *        1 on failure
  *
  */
@@ -163,17 +160,20 @@ int BME280::read_pressure(double* pressure){
 /*!
  * @brief Read sensor temperature
  *
- * @param temperature Pointer to the value of the temperature
+ * @param temperature Pointer to the value of the temperature in °C
  *
  * @return
  *        0 on succes,
  *        1 on failure
  *
+ * FIXME
  */
 int BME280::read_temperature(double* temperature){
-    /* raw temperature value */
-    int32_t raw_temp = uncomp_data.temperature;
+    if (!temperature)
+        return FAILURE;
 
+    wait(1);
+    uint32_t raw_temp = uncomp_data.temperature;
 	int32_t var1 = (((raw_temp >> 3) - (static_cast<int32_t>(calib.dig_T1) << 1)) *
 			(static_cast<int32_t>(calib.dig_T2))) >> 11;
 	int32_t var2 = (((((raw_temp >> 4) - (static_cast<int32_t>(calib.dig_T1))) *
@@ -181,26 +181,91 @@ int BME280::read_temperature(double* temperature){
 			(static_cast<int32_t>(calib.dig_T3))) >> 14;
     t_fine = var1 + var2;
 
-	if (temperature){
-		*temperature = static_cast<double>(((t_fine * 5) + 128) >> 8) / 100.0;
-//         if (*temperature > TEMPERATURE_MAX)
-//             *temperature = TEMPERATURE_MAX;
-//         if (*temperature < TEMPERATURE_MIN)
-//             *temperature = TEMPERATURE_MIN;
-		return SUCCESS;
-	}
-	return FAILURE;
+    *temperature = static_cast<double>(((t_fine * 5) + 128) >> 8) / 100.0;
+    /*
+    if (*temperature > TEMPERATURE_MAX)
+        *temperature = TEMPERATURE_MAX;
+    if (*temperature < TEMPERATURE_MIN)
+        *temperature = TEMPERATURE_MIN;
+        *temperature
+    */
+    return SUCCESS;
 }
 
 /*!
  *
+ * TODO
  *
  */
 int BME280::read_env_data(bme280_environment_t* env){
-    int bus_status = SUCCESS;
+	/*
+    if (!env)
+    	return FAILURE;
+    // XXX: order?
+    if (read_temperature(env->temperature) != SUCCESS)
+    	return FAILURE;
+    if (read_pressure(env->pressure) != SUCCESS)
+    	return FAILURE;
+    if (read_humidity(env->humidity) != SUCCESS)
+    	return FAILURE;
+    */
+    return SUCCESS;
+}
 
+/*!
+ *
+ * TODO
+ */
+int BME280::write_power_mode(SensorMode mode){
+    int8_t sensor_mode;
+    if (i2c_read_register(RegisterAddress::CONTROL_MEAS, &sensor_mode) != SUCCESS)
+        return FAILURE;
+    sensor_mode = SET_BITS_POS_0(sensor_mode, SENSOR_MODE, static_cast<int8_t>(mode));
+    if (i2c_write_register(RegisterAddress::CONTROL_MEAS, sensor_mode) != SUCCESS)
+        return FAILURE;
+    return SUCCESS;
+}
 
-    return bus_status;
+/*!
+ *
+ * TODO
+ */
+int BME280::sleep(){
+    static char data[4];
+    data[0] = static_cast<char>(RegisterAddress::CONTROL_HUMID);
+    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, data, 1, true) != SUCCESS)
+        return FAILURE;
+    if (_i2c->read(static_cast<int>(_i2cAddress) << 1, data, 4, false) != SUCCESS)
+        return FAILURE;
+    return softreset();
+}
+
+/*!
+ * @brief Set the device power mode
+ *
+ * @param mode Chosen power mode
+ *
+ * value  | power mode
+ * ------------------
+ *   0b00 | SLEEP
+ *   0b01 | FORCED
+ *   0b10 | NORMAL
+ *
+ * @return
+ *         0 on success,
+ *         1 on failure
+ */
+int BME280::set_power_mode(SensorMode mode){
+    SensorMode last_set_mode;
+    if (get_power_mode(&last_set_mode) != SUCCESS)
+        return FAILURE;
+    if (last_set_mode != SensorMode::SLEEP){
+        if (sleep() != SUCCESS)
+            return FAILURE;
+        write_power_mode(mode);    
+        return SUCCESS;
+    }
+    return FAILURE;
 }
 
 /*!
@@ -226,32 +291,29 @@ int BME280::get_power_mode(SensorMode* mode){
     return FAILURE;
 }
 
+
 /*!
- * @brief Set the device power mode
  *
- * @param mode Chosen power mode
- *
- * value  | power mode
- * ------------------
- *   0b00 | SLEEP
- *   0b01 | FORCED
- *   0b10 | NORMAL
- *
- * @return
- *         0 on success,
- *         1 on failure
+ * TODO
  */
-int BME280::set_power_mode(SensorMode mode){
-    int8_t ctrl_meas = INIT_VALUE;
-    if (i2c_read_register(RegisterAddress::CONTROL_MEAS, &ctrl_meas) != SUCCESS)
-        return FAILURE;
-    int8_t mode_8_t = static_cast<int8_t>(mode);
-    ctrl_meas = SET_BITS_POS_0(ctrl_meas, SENSOR_MODE, mode_8_t);
-    if (i2c_write_register(RegisterAddress::CONTROL_MEAS, ctrl_meas) != SUCCESS){
-        _sensorMode = mode;
-        return SUCCESS;
-    }
-    return FAILURE;
+void BME280::set_sampling(SensorMode mode, 
+        SensorSampling temp_sampling, 
+        SensorSampling press_sampling,
+        SensorSampling humid_sampling,
+        SensorFilter filter,
+        StandbyDuration duration){
+    _sensorMode = mode;
+    settings.osrs_t = static_cast<uint8_t>(temp_sampling);
+    settings.osrs_h = static_cast<uint8_t>(humid_sampling);
+    settings.osrs_p = static_cast<uint8_t>(press_sampling);
+    settings.filter = static_cast<uint8_t>(filter);
+    settings.standby_time = static_cast<uint8_t>(duration);
+
+    i2c_write_register(RegisterAddress::CONTROL_HUMID, static_cast<int8_t>(settings.osrs_h));
+    i2c_write_register(RegisterAddress::CONTROL_MEAS, 
+            static_cast<int8_t>(settings.osrs_t << 5 | settings.osrs_p << 3 |  static_cast<char>(mode)));
+    i2c_write_register(RegisterAddress::CONFIG,
+            static_cast<int8_t>((settings.standby_time << 5) | (settings.filter << 3) | 0));
 }
 
 /*!
@@ -275,46 +337,60 @@ bool BME280::read_chip_id(){
    return true;
 }
 
-// XXX: make this function return int?
+/*!
+ * XXX: make this function return int?
+ * TODO
+ */
 void BME280::get_calib(){
     int16_t s16_dig;
     int8_t s8_dig_1, s8_dig_2;
-    int16_t dig[3];
+    int16_t s8_dig[2];
 
     /* Temperature-related coefficients */
-    i2c_read_vector(RegisterAddress::DIG_T1, dig);
-    calib.dig_T1 = dig[0];
-    calib.dig_T2 = dig[1];
-    calib.dig_T3 = dig[2];
-    printf("dig_T1 = 0x%X, dig_T2 = 0x%X, dig_T3 = 0x%X\n", calib.dig_T1, calib.dig_T2, calib.dig_T3);
-    
+    i2c_read_two_bytes(RegisterAddress::DIG_T1, s8_dig);
+    calib.dig_T1 = ((static_cast<uint16_t>(s8_dig[1] << 8) | s8_dig[0]));
+    i2c_read_two_bytes(RegisterAddress::DIG_T2, s8_dig);
+    calib.dig_T2 = (s8_dig[1] << 8 | s8_dig[0]);
+    i2c_read_two_bytes(RegisterAddress::DIG_T3, s8_dig);
+    calib.dig_T3 = (s8_dig[1] << 8 | s8_dig[0]);
+
     /* Pressure-related coefficients */
-    // TODO: use i2c_read_vector()
-    i2c_read_two_bytes(RegisterAddress::DIG_P1, &s16_dig);
-    calib.dig_P1 = static_cast<uint16_t>(s16_dig);
-    i2c_read_two_bytes(RegisterAddress::DIG_P2, &calib.dig_P2);
-    i2c_read_two_bytes(RegisterAddress::DIG_P3, &calib.dig_P3);
-    i2c_read_two_bytes(RegisterAddress::DIG_P4, &calib.dig_P4);
-    i2c_read_two_bytes(RegisterAddress::DIG_P5, &calib.dig_P5);
-    i2c_read_two_bytes(RegisterAddress::DIG_P6, &calib.dig_P6);
-    i2c_read_two_bytes(RegisterAddress::DIG_P7, &calib.dig_P7);
-    i2c_read_two_bytes(RegisterAddress::DIG_P8, &calib.dig_P8);
-    i2c_read_two_bytes(RegisterAddress::DIG_P9, &calib.dig_P9);
+    i2c_read_two_bytes(RegisterAddress::DIG_P1, s8_dig);
+    calib.dig_P1 = static_cast<uint16_t>((s8_dig[1] << 8 | s8_dig[0]));
+    i2c_read_two_bytes(RegisterAddress::DIG_P2, s8_dig);
+    calib.dig_P2 = (s8_dig[1] << 8 | s8_dig[0]);
+    i2c_read_two_bytes(RegisterAddress::DIG_P3, s8_dig);
+    calib.dig_P3 = (s8_dig[1] << 8 | s8_dig[0]);
+    i2c_read_two_bytes(RegisterAddress::DIG_P4, s8_dig);
+    calib.dig_P4 = (s8_dig[1] << 8 | s8_dig[0]);
+    i2c_read_two_bytes(RegisterAddress::DIG_P5, s8_dig);
+    calib.dig_P5 = (s8_dig[1] << 8 | s8_dig[0]);
+    i2c_read_two_bytes(RegisterAddress::DIG_P6, s8_dig);
+    calib.dig_P6 = (s8_dig[1] << 8 | s8_dig[0]);
+    i2c_read_two_bytes(RegisterAddress::DIG_P7, s8_dig);
+    calib.dig_P7 = (s8_dig[1] << 8 | s8_dig[0]);
+    i2c_read_two_bytes(RegisterAddress::DIG_P8, s8_dig);
+    calib.dig_P8 = (s8_dig[1] << 8 | s8_dig[0]);
+    i2c_read_two_bytes(RegisterAddress::DIG_P9, s8_dig);
+    calib.dig_P9 = (s8_dig[1] << 8 | s8_dig[0]);
 
     /* Humidity-related coefficients */
-    // TODO: use i2c_read_vector()
     i2c_read_register(RegisterAddress::DIG_H1, &s8_dig_1);
     calib.dig_H1 = static_cast<uint8_t>(s8_dig_1);
-    i2c_read_two_bytes(RegisterAddress::DIG_H2, &calib.dig_H2);
+    i2c_read_two_bytes(RegisterAddress::DIG_H2, s8_dig);
+    calib.dig_H2 = (s8_dig[1] << 8 | s8_dig[0]);
     i2c_read_register(RegisterAddress::DIG_H3, &s8_dig_1);
     calib.dig_H3 = static_cast<uint8_t>(s8_dig_1);
-    i2c_read_register(RegisterAddress::DIG_H4, &s8_dig_1);
-    i2c_read_register(static_cast<RegisterAddress>(static_cast<char>(RegisterAddress::DIG_H4) + 1), &s8_dig_2);
-    calib.dig_H4 = (s8_dig_1 << 4 | (s8_dig_2 & 0xF));
-    i2c_read_register(RegisterAddress::DIG_H5, &s8_dig_1);
+    i2c_read_two_bytes(RegisterAddress::DIG_H4, s8_dig);
+    calib.dig_H4 = (s8_dig[0] << 4 | (s8_dig[1] & 0xF));
+
+    //FIXME
+    /*
+    i2c_read_register(RegisterAddress::DIG_H5, s8_dig);
     i2c_read_register(static_cast<RegisterAddress>(static_cast<char>(RegisterAddress::DIG_H5) + 1), &s8_dig_2);
-    calib.dig_H5 = (s8_dig_2 << 4 | (s8_dig_1 & 0xF));
+    calib.dig_H5 = (s8_dig[1] << 4 | (s8_dig[0]1 & 0xF));
     i2c_read_register(RegisterAddress::DIG_H6, &calib.dig_H6);
+    */
 }
 
 /*!
@@ -326,17 +402,23 @@ void BME280::get_calib(){
  * @return None
  */
 void BME280::get_raw_data(){
-    int8_t data[3];
+    int8_t data_3[3];
+    int8_t data_2[2];
     
-    i2c_read_three_bytes(RegisterAddress::PRESS_MSB, data);
-    uncomp_data.pressure = static_cast<int32_t>((data[0] << 12) | (data[1] << 4) | (data[2] & 0xF));
+    i2c_read_three_bytes(RegisterAddress::PRESS_MSB, data_3);
+    // raw_pressure = PRESS_MSB | PRESS_LSB | PRESS_XLSB[3:0]
+    uncomp_data.pressure = static_cast<uint32_t>((data_3[0] << 12) |
+            (data_3[1] << 4) | (data_3[2] & 0xF));
 
-    i2c_read_three_bytes(RegisterAddress::TEMP_MSB, data);
-    uncomp_data.temperature = static_cast<int32_t>((data[0] << 12) | (data[1] << 4) | (data[2] & 0xF));
+    i2c_read_three_bytes(RegisterAddress::TEMP_MSB, data_3);
+    // raw_temperature = TEMP_MSB | TEMP_LS | TEMP_XLSB[3:0]
+    uncomp_data.temperature = static_cast<uint32_t>((data_3[0] << 12) |
+            (data_3[1] << 4) | (data_3[2] & 0xF));
 
-    int16_t humid;
-    i2c_read_two_bytes(RegisterAddress::HUMID_MSB, &humid);
-    uncomp_data.humidity = static_cast<int32_t>(humid);
+    i2c_read_two_bytes(RegisterAddress::HUMID_MSB, data_2);
+    // raw_humidity = HUMID_MSB | HUMID_LSB
+    uncomp_data.humidity = static_cast<int16_t>(data_2[0] << EIGHT_BITS_SHIFT |
+            data_2[1]);
 }
 
 /*!
@@ -379,7 +461,24 @@ int BME280::i2c_read_two_bytes(RegisterAddress registerAddress, int16_t* value){
         return FAILURE;
     if (_i2c->read(static_cast<int>(_i2cAddress) << 1, data, 2, false) != SUCCESS)
         return FAILURE;
-    *value = static_cast<int16_t>((data[1] << EIGHT_BITS_SHIFT) | (0xFF & data[0]));
+    *value = static_cast<int16_t>((data[1] << EIGHT_BITS_SHIFT) | (data[0]));
+    return SUCCESS;
+}
+
+/*!
+ *
+ *
+ * TODO
+ */
+int BME280::i2c_read_two_bytes(RegisterAddress registerAddress, int8_t value[2]){
+    static char data[3];
+    data[0] = static_cast<char>(registerAddress);
+    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, data, 1, true) != SUCCESS)
+        return FAILURE;
+    if (_i2c->read(static_cast<int>(_i2cAddress) << 1, data, 2, false) != SUCCESS)
+        return FAILURE;
+    for (int i = 0; i < 2; i++)
+        value[i] = data[i];
     return SUCCESS;
 }
 
@@ -408,6 +507,10 @@ int BME280::i2c_read_three_bytes(RegisterAddress registerAddress, int32_t* value
     return SUCCESS;
 }
 
+/*!
+ *
+ * TODO
+ */
 int BME280::i2c_read_three_bytes(RegisterAddress registerAddress, int8_t value[3]){
     static char data[3];
     data[0] = static_cast<char>(registerAddress);
