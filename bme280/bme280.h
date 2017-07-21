@@ -46,6 +46,9 @@
 #define SENSOR_MODE__MSK                   0x03
 #define SENSOR_MODE__POS                   0x00
 
+#define UNCOMPENSATED_TEMPERATURE__MSK     0xFFFFF
+#define UNCOMPENSATED_PRESSURE_MSK         0xFFFFF
+
 #define SOFTRESET_CMD                      0xB6
 
 typedef struct {
@@ -73,7 +76,7 @@ typedef struct {
     /*! uncompensated pressure */
     uint32_t pressure;
     /*! uncompensated temperature */
-    uint32_t temperature;
+    int32_t temperature;
 } bme280_uncomp_data_t;
 
 typedef struct {
@@ -192,6 +195,8 @@ public:
     int read_pressure(double* pressure);
     int read_temperature(double* temperature);
     int read_env_data(bme280_environment_t* env);
+
+    void take_forced_measurement();
 
     int set_power_mode(SensorMode mode);
     int get_power_mode(SensorMode* mode);
