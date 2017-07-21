@@ -17,9 +17,14 @@
 
 #include "bme280/bme280.hpp"
 
-namespace {
+namespace sixtron {
 
-}
+#define SET__BITS__POS__0(reg__data, bitname, data) \
+				((reg__data & ~(bitname##__MSK)) | \
+				(data & bitname##__MSK))
+#define GET__BITS(reg__data, bitname)  \
+				((reg__data & (bitname##__MSK)) >> (bitname##__POS))
+#define GET__BITS__POS__0(reg__data, bitname)  (reg__data & (bitname##__MSK))
 
 /*!
  * @brief Default BME280 contructor
@@ -62,11 +67,20 @@ bool BME280::initialize(){
    return true;
 }
 
+
+void BME280::update_settings(const uint8_t* reg_data){
+    settings.osr_h = GET__BITS__POS__0(reg_data[0], CONTROL_HUMID);
+    settings.osr_p = GET__BITS(reg_data[2], CONTROL_PRESS);
+    settings.osr_t = GET__BITS(reg_data[2], CONTROL_TEMP);
+    settings.filter = GET__BITS(reg_data[3], CONTROL_TEMP);
+    settings.standby_time = GET__BITS(reg_data[3], STANDBY);
+}
+
 /*!
  *
  *
  */
-int BME280::read_humidity(float* humidity){
+int BME280::read_humidity(double* humidity){
     int bus_status = SUCCESS;
 
 
@@ -77,7 +91,7 @@ int BME280::read_humidity(float* humidity){
  *
  *
  */
-int BME280::read_pressure(float* pressure){
+int BME280::read_pressure(double* pressure){
     int bus_status = SUCCESS;
 
 
@@ -94,7 +108,7 @@ int BME280::read_pressure(float* pressure){
  *        1 on failure
  *
  */
-int BME280::read_temperature(float* temperature){
+int BME280::read_temperature(double* temperature){
     int bus_status = SUCCESS;
     int32_t var1, var2;
     int32_t adc_T;
@@ -113,11 +127,27 @@ int BME280::read_temperature(float* temperature){
            ((adc_T >> 4) - (static_cast<int32_t>(calib_dig_t[0])))) >> 12) *
            (static_cast<int32_t>(calib_dig_t[2]))) >> 14;
     if (temperature){
-        *temperature = ((var1 + var2) * 5 + 128) >> 8;
-        *temperature /= 100;
+        *temperature = static_cast<double>(((var1 + var2) * 5 + 128) >> 8);
+        *temperature /= 100.0;
+
+        if (*temperature > TEMPERATURE_MAX)
+            *temperature = TEMPERATURE_MAX;
+        if (*temperature < TEMPERATURE_MIN)
+            *temperature = TEMPERATURE_MIN;
+
         return SUCCESS;
     }
     return FAILURE;
+}
+
+int BME280::get_calib_data(bme280_calib_data_t* calib){
+    int bus_status = SUCCESS;
+    uint8_t calib_data[TEMP_PRESS_CALIB_DATA_LEN] = {0};
+    bus_status = i2c_read_n_bytes(RegisterAddress::DIG_T1, calib_data, 
+            TEMP_PRESS_CALIB_DATA_LEN);
+    if (bus_status != 0)
+        return FAILURE;
+    
 }
 
 /*!
@@ -295,6 +325,7 @@ int BME280::i2c_read_three_bytes(RegisterAddress registerAddress, int32_t* value
  *         0 on success,
  *         1 on failure
  */
+//TODO: use i2c_read_n_bytes instead?
 int BME280::i2c_read_vector(RegisterAddress registerAddress, int16_t value[3]){
     int bus_status = SUCCESS;
     static char data[6];
@@ -306,7 +337,22 @@ int BME280::i2c_read_vector(RegisterAddress registerAddress, int16_t value[3]){
     if (bus_status != 0)
         return FAILURE;
     for (int i = 0; i < 3; i++)
-        value[i] = (data[2*i + 1] << EIGHT_BITS_SHIFT) | (0xFF & data[2*i]);
+        value[i] = static_cast<int16_t>((data[2*i + 1] << EIGHT_BITS_SHIFT) | data[2*i]);
+    return bus_status;
+}
+
+int BME280::i2c_read_n_bytes(RegisterAddress startAddress, int8_t* value, int n){
+    int bus_status = SUCCESS;
+    static char data;
+    data = static_cast<char>(startAddress);
+    bus_status = _i2c->write(static_cast<_i2cAddress) << 1, data, 1, true);
+    if (bus_status != 0)
+        return FAILURE;
+    bus_status = _i2c->read(static_cast<_i2cAddress) << 1, value, n, false);
+    if (bus_status != 0)
+        return FAILURE;
+    for (int i = 0; i < n; i++)
+        value[i] = static_cast<int16_t>((data[2*i + 1] << EIGHT_BITS_SHIFT) | data[2*i]);
     return bus_status;
 }
 
@@ -329,4 +375,6 @@ int BME280::i2c_write_register(RegisterAddress registerAddress, int8_t value){
 	if (bus_status != 0)
         return FAILURE;
     return bus_status;
+}
+
 }
