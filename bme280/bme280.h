@@ -208,14 +208,14 @@ public:
                       SensorFilter filter = SensorFilter::OFF,
                       StandbyDuration duration = StandbyDuration::MS_0_5);
 
-    char chip_id() { return _chipId; }
+    char chip_id() { return _chip_id; }
     bme280_settings_t get_settings() { return settings; };
 
 private:
-    char _chipId = 0;
+    char _chip_id = 0;
     I2C* _i2c;
-    I2CAddress _i2cAddress;
-    SensorMode _sensorMode;
+    I2CAddress _i2c_address;
+    SensorMode _sensor_mode;
     bme280_settings_t settings;
     bme280_calib_data_t calib;
     bme280_uncomp_data_t uncomp_data;
@@ -225,13 +225,13 @@ private:
     void get_calib();
     void get_raw_data();
     int write_power_mode(SensorMode mode);
-    int i2c_read_register(RegisterAddress registerAddress, int8_t* value);
-    int i2c_read_two_bytes(RegisterAddress registerAddress, int16_t* value);
-    int i2c_read_two_bytes(RegisterAddress registerAddress, int8_t value[2]);
-    int i2c_read_three_bytes(RegisterAddress registerAddress, int32_t* value);
-    int i2c_read_three_bytes(RegisterAddress registerAddress, int8_t value[3]);
-    int i2c_read_vector(RegisterAddress registerAddress, int16_t value[3]);
-    int i2c_write_register(RegisterAddress registerAddress, int8_t value);
+    int i2c_read_register(RegisterAddress register_address, int8_t* value);
+    int i2c_read_two_bytes(RegisterAddress register_address, int16_t* value);
+    int i2c_read_two_bytes(RegisterAddress register_address, int8_t value[2]);
+    int i2c_read_three_bytes(RegisterAddress register_address, int32_t* value);
+    int i2c_read_three_bytes(RegisterAddress register_address, int8_t value[3]);
+    int i2c_read_vector(RegisterAddress register_address, int16_t value[3]);
+    int i2c_write_register(RegisterAddress register_address, int8_t value);
 };
 
 #endif // BME280_H_
