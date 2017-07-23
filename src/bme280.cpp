@@ -30,12 +30,12 @@ namespace {
  * @brief Default BME280 contructor
  *
  * @param i2c Instance of I2C
- * @param i2cAddress I2C address of the device
+ * @param i2c_address I2C address of the device
  *
  */
-BME280::BME280(I2C* i2c, I2CAddress i2cAddress):
-    _i2c(i2c), _i2cAddress(i2cAddress){
-    _sensorMode = SensorMode::NORMAL;
+BME280::BME280(I2C* i2c, I2CAddress i2c_address):
+    _i2c(i2c), _i2c_address(i2c_address){
+    _sensor_mode = SensorMode::NORMAL;
     t_fine = 0;
 }
 
@@ -54,7 +54,7 @@ bool BME280::initialize(){
        return false;
    else {
        printf("Chip ID: 0x%X\n", 0x60);
-       _chipId = 0x60;
+       _chip_id = 0x60;
    }
 
    if (softreset() != SUCCESS)
@@ -244,9 +244,9 @@ int BME280::write_power_mode(SensorMode mode){
 int BME280::sleep(){
     static char data[4];
     data[0] = static_cast<char>(RegisterAddress::CONTROL_HUMID);
-    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, data, 1, true) != SUCCESS)
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS)
         return FAILURE;
-    if (_i2c->read(static_cast<int>(_i2cAddress) << 1, data, 4, false) != SUCCESS)
+    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 4, false) != SUCCESS)
         return FAILURE;
     return softreset();
 }
@@ -256,8 +256,8 @@ int BME280::sleep(){
  * TODO
  */
 void BME280::take_forced_measurement(){
-	if (_sensorMode == SensorMode::FORCED){
-		if (i2c_write_register(RegisterAddress::CONTROL_MEAS, static_cast<int8_t>((settings.osrs_t << 5) | (settings.osrs_p << 3) | static_cast<char>(_sensorMode))) != SUCCESS)
+	if (_sensor_mode == SensorMode::FORCED){
+		if (i2c_write_register(RegisterAddress::CONTROL_MEAS, static_cast<int8_t>((settings.osrs_t << 5) | (settings.osrs_p << 3) | static_cast<char>(_sensor_mode))) != SUCCESS)
 			return;
 		int8_t data;
 		while (true){
@@ -315,7 +315,7 @@ int BME280::set_power_mode(SensorMode mode){
  */
 int BME280::get_power_mode(SensorMode* mode){
     if (mode){
-        *mode = _sensorMode;
+        *mode = _sensor_mode;
         return SUCCESS;
     }
     return FAILURE;
@@ -332,7 +332,7 @@ void BME280::set_sampling(SensorMode mode,
         SensorSampling humid_sampling,
         SensorFilter filter,
         StandbyDuration duration){
-    _sensorMode = mode;
+    _sensor_mode = mode;
     settings.osrs_t = static_cast<uint8_t>(temp_sampling);
     settings.osrs_h = static_cast<uint8_t>(humid_sampling);
     settings.osrs_p = static_cast<uint8_t>(press_sampling);
@@ -368,14 +368,17 @@ bool BME280::read_chip_id(){
 }
 
 /*!
- * XXX: make this function return int?
- * TODO
+ * @brief Read and store calibration data
+ *
+ * @param None
+ *
+ * @return None
  */
 void BME280::get_calib(){
-    int16_t s16_dig;
     int8_t s8_dig_1, s8_dig_2;
     int8_t s8_dig[2];
 
+    // XXX: use read_vector or similar function to burst-read?
     /* Temperature-related coefficients */
     i2c_read_two_bytes(RegisterAddress::DIG_T1, s8_dig);
     calib.dig_T1 = static_cast<uint16_t>((s8_dig[1] << 8) | (s8_dig[0]));
@@ -457,20 +460,20 @@ void BME280::get_raw_data(){
 /*!
  * @brief Read register data
  *
- * @param registerAddress Address of the register
+ * @param register_address Address of the register
  * @param value Pointer to the value read from the register
  *
  * @return 
  *         0 on success,
  *         1 on failure
  */
-int BME280::i2c_read_register(RegisterAddress registerAddress, int8_t* value){
+int BME280::i2c_read_register(RegisterAddress register_address, int8_t* value){
     static char data;
-    data = static_cast<char>(registerAddress);
-    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, &data, 1, true) != SUCCESS)
+    data = static_cast<char>(register_address);
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, &data, 1, true) != SUCCESS)
 		return FAILURE;
 	char* char_value = reinterpret_cast<char* >(value);
-    if (_i2c->read(static_cast<int>(_i2cAddress) << 1, char_value, 1) != SUCCESS)
+    if (_i2c->read(static_cast<int>(_i2c_address) << 1, char_value, 1) != SUCCESS)
         return FAILURE;
     return SUCCESS;
 }
@@ -480,19 +483,19 @@ int BME280::i2c_read_register(RegisterAddress registerAddress, int8_t* value){
  *
  * @note This function is useful to read memory-contiguous LSB/MSB registers
  *
- * @param registerAddress Address of the first register
+ * @param register_address Address of the first register
  * @param value Pointer to the value read from the registers
  *
  * @return 
  *         0 on success,
  *         1 on failure
  */
-int BME280::i2c_read_two_bytes(RegisterAddress registerAddress, int16_t* value){
+int BME280::i2c_read_two_bytes(RegisterAddress register_address, int16_t* value){
     static char data[2];
-    data[0] = static_cast<char>(registerAddress);
-    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, data, 1, true) != SUCCESS)
+    data[0] = static_cast<char>(register_address);
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS)
         return FAILURE;
-    if (_i2c->read(static_cast<int>(_i2cAddress) << 1, data, 2, false) != SUCCESS)
+    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 2, false) != SUCCESS)
         return FAILURE;
     *value = static_cast<int16_t>((data[1] << EIGHT_BITS_SHIFT) | (data[0]));
     return SUCCESS;
@@ -503,12 +506,12 @@ int BME280::i2c_read_two_bytes(RegisterAddress registerAddress, int16_t* value){
  *
  * TODO
  */
-int BME280::i2c_read_two_bytes(RegisterAddress registerAddress, int8_t value[2]){
+int BME280::i2c_read_two_bytes(RegisterAddress register_address, int8_t value[2]){
     static char data[2];
-    data[0] = static_cast<char>(registerAddress);
-    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, data, 1, true) != SUCCESS)
+    data[0] = static_cast<char>(register_address);
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS)
         return FAILURE;
-    if (_i2c->read(static_cast<int>(_i2cAddress) << 1, data, 2, false) != SUCCESS)
+    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 2, false) != SUCCESS)
         return FAILURE;
     for (int i = 0; i < 2; i++)
         value[i] = data[i];
@@ -520,19 +523,19 @@ int BME280::i2c_read_two_bytes(RegisterAddress registerAddress, int8_t value[2])
  *
  * @note This function is useful to read memory-contiguous LSB/MSB/XLSB registers
  *
- * @param registerAddress Address of the first register
+ * @param register_address Address of the first register
  * @param value Pointer to the value read from the registers
  *
  * @return 
  *         0 on success,
  *         1 on failure
  */
-int BME280::i2c_read_three_bytes(RegisterAddress registerAddress, int32_t* value){
+int BME280::i2c_read_three_bytes(RegisterAddress register_address, int32_t* value){
     static char data[3];
-    data[0] = static_cast<char>(registerAddress);
-    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, data, 1, true) != SUCCESS)
+    data[0] = static_cast<char>(register_address);
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS)
         return FAILURE;
-    if (_i2c->read(static_cast<int>(_i2cAddress) << 1, data, 3, false) != SUCCESS)
+    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 3, false) != SUCCESS)
         return FAILURE;
     *value = static_cast<int32_t>((data[2] << SIXTEEN_BITS_SHIFT) | 
                                   (data[1] << EIGHT_BITS_SHIFT) |
@@ -544,12 +547,12 @@ int BME280::i2c_read_three_bytes(RegisterAddress registerAddress, int32_t* value
  *
  * TODO
  */
-int BME280::i2c_read_three_bytes(RegisterAddress registerAddress, int8_t value[3]){
+int BME280::i2c_read_three_bytes(RegisterAddress register_address, int8_t value[3]){
     char data[3];
-    data[0] = static_cast<char>(registerAddress);
-    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, data, 1, true) != SUCCESS)
+    data[0] = static_cast<char>(register_address);
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS)
         return FAILURE;
-    if (_i2c->read(static_cast<int>(_i2cAddress) << 1, data, 3, false) != SUCCESS)
+    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 3, false) != SUCCESS)
         return FAILURE;
     for (int i = 0; i < 3; i++)
         value[i] = data[i];
@@ -559,7 +562,7 @@ int BME280::i2c_read_three_bytes(RegisterAddress registerAddress, int8_t value[3
 /*!
  * @brief Read a 16 bits signed vector (3 dimensions) continuous read
  *
- * @param registerAddress Address of the register containing the LSB 
+ * @param register_address Address of the register containing the LSB 
  *                        of the first axis
  *        value Array to store the read values
  *
@@ -567,12 +570,12 @@ int BME280::i2c_read_three_bytes(RegisterAddress registerAddress, int8_t value[3
  *         0 on success,
  *         1 on failure
  */
-int BME280::i2c_read_vector(RegisterAddress registerAddress, int16_t value[3]){
+int BME280::i2c_read_vector(RegisterAddress register_address, int16_t value[3]){
     static char data[6];
-    data[0] = static_cast<char>(registerAddress);
-    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, data, 1, true) != SUCCESS)
+    data[0] = static_cast<char>(register_address);
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS)
         return FAILURE;
-    if (_i2c->read(static_cast<int>(_i2cAddress) << 1, data, 6, false) != SUCCESS)
+    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 6, false) != SUCCESS)
         return FAILURE;
     for (int i = 0; i < 3; i++)
         value[i] = (data[2*i + 1] << EIGHT_BITS_SHIFT) | (data[2*i]);
@@ -582,18 +585,18 @@ int BME280::i2c_read_vector(RegisterAddress registerAddress, int16_t value[3]){
 /*!
  * @brief Write to a register
  *
- * @param registerAddress Address of the register to write to
+ * @param register_address Address of the register to write to
  * @param value Data to store in the register
  *
  * @return 
  *         0 on success,
  *         1 on failure
  */
-int BME280::i2c_write_register(RegisterAddress registerAddress, int8_t value){
+int BME280::i2c_write_register(RegisterAddress register_address, int8_t value){
     static char data[2];
-    data[0] = static_cast<char>(registerAddress);
+    data[0] = static_cast<char>(register_address);
     data[1] = static_cast<char>(value);
-    if (_i2c->write(static_cast<int>(_i2cAddress) << 1, data, 2) != SUCCESS)
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 2) != SUCCESS)
         return FAILURE;
     return SUCCESS;
 }
