@@ -219,7 +219,7 @@ private:
     bme280_settings_t settings;
     bme280_calib_data_t calib;
     bme280_raw_data_t uncomp_data;
-    int32_t t_fine;
+    double t_fine;
 
     bool read_chip_id();
     void get_calib();
