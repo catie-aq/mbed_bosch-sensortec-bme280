@@ -77,7 +77,7 @@ typedef struct {
     uint32_t pressure;
     /*! uncompensated temperature */
     int32_t temperature;
-} bme280_uncomp_data_t;
+} bme280_raw_data_t;
 
 typedef struct {
     uint16_t dig_T1;
@@ -218,7 +218,7 @@ private:
     SensorMode _sensor_mode;
     bme280_settings_t settings;
     bme280_calib_data_t calib;
-    bme280_uncomp_data_t uncomp_data;
+    bme280_raw_data_t uncomp_data;
     int32_t t_fine;
 
     bool read_chip_id();
