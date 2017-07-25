@@ -57,7 +57,7 @@ bool BME280::initialize(){
        _chip_id = 0x60;
    }
 
-   if (softreset() != SUCCESS)
+   if (reset() != SUCCESS)
        return false;
 
    // wait for chip to wake up
@@ -77,7 +77,7 @@ bool BME280::initialize(){
  *         0 on success,
  *         1 on failure
  */
-int BME280::softreset(){
+int BME280::reset(){
     if (i2c_write_register(RegisterAddress::RESET, SOFTRESET_CMD) != SUCCESS)
         return FAILURE;
     wait_ms(2);
@@ -248,7 +248,7 @@ int BME280::sleep(){
         return FAILURE;
     if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 4, false) != SUCCESS)
         return FAILURE;
-    return softreset();
+    return reset();
 }
 
 /*!

@@ -189,7 +189,7 @@ public:
 
     int sleep();
     int resume();
-    int softreset();
+    int reset();
 
     int read_humidity(double* humidity);
     int read_pressure(double* pressure);
