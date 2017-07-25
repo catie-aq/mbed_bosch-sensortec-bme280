@@ -479,32 +479,16 @@ int BME280::i2c_read_register(RegisterAddress register_address, int8_t* value){
 }
 
 /*!
- * @brief Read successive registers data
+ * @brief Read two successive registers data
  *
  * @note This function is useful to read memory-contiguous LSB/MSB registers
  *
  * @param register_address Address of the first register
- * @param value Pointer to the value read from the registers
+ * @param value Array to store read data
  *
  * @return 
  *         0 on success,
  *         1 on failure
- */
-int BME280::i2c_read_two_bytes(RegisterAddress register_address, int16_t* value){
-    static char data[2];
-    data[0] = static_cast<char>(register_address);
-    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS)
-        return FAILURE;
-    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 2, false) != SUCCESS)
-        return FAILURE;
-    *value = static_cast<int16_t>((data[1] << EIGHT_BITS_SHIFT) | (data[0]));
-    return SUCCESS;
-}
-
-/*!
- *
- *
- * TODO
  */
 int BME280::i2c_read_two_bytes(RegisterAddress register_address, int8_t value[2]){
     static char data[2];
@@ -524,28 +508,11 @@ int BME280::i2c_read_two_bytes(RegisterAddress register_address, int8_t value[2]
  * @note This function is useful to read memory-contiguous LSB/MSB/XLSB registers
  *
  * @param register_address Address of the first register
- * @param value Pointer to the value read from the registers
+ * @param value Array to store the read data
  *
  * @return 
  *         0 on success,
  *         1 on failure
- */
-int BME280::i2c_read_three_bytes(RegisterAddress register_address, int32_t* value){
-    static char data[3];
-    data[0] = static_cast<char>(register_address);
-    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS)
-        return FAILURE;
-    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 3, false) != SUCCESS)
-        return FAILURE;
-    *value = static_cast<int32_t>((data[2] << SIXTEEN_BITS_SHIFT) | 
-                                  (data[1] << EIGHT_BITS_SHIFT) |
-                                  (data[0]));
-    return SUCCESS;
-}
-
-/*!
- *
- * TODO
  */
 int BME280::i2c_read_three_bytes(RegisterAddress register_address, int8_t value[3]){
     char data[3];
