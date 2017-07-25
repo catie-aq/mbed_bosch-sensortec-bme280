@@ -257,7 +257,10 @@ int BME280::sleep(){
  */
 void BME280::take_forced_measurement(){
 	if (_sensor_mode == SensorMode::FORCED){
-		if (i2c_write_register(RegisterAddress::CONTROL_MEAS, static_cast<int8_t>((settings.osrs_t << 5) | (settings.osrs_p << 3) | static_cast<char>(_sensor_mode))) != SUCCESS)
+		if (i2c_write_register(RegisterAddress::CONTROL_MEAS, 
+                    static_cast<int8_t>((settings.osrs_t << OSRS_T__POS) 
+                        | (settings.osrs_p << OSRS_P__POS) 
+                        | static_cast<char>(_sensor_mode))) != SUCCESS)
 			return;
 		int8_t data;
 		while (true){
@@ -347,11 +350,20 @@ void BME280::set_sampling(SensorMode mode,
     settings.filter = static_cast<uint8_t>(filter);
     settings.standby_time = static_cast<uint8_t>(duration);
 
-    i2c_write_register(RegisterAddress::CONTROL_HUMID, static_cast<int8_t>(settings.osrs_h));
-    i2c_write_register(RegisterAddress::CONTROL_MEAS, 
-            static_cast<int8_t>(settings.osrs_t << 5 | settings.osrs_p << 3 |  static_cast<char>(mode)));
-    i2c_write_register(RegisterAddress::CONFIG,
-            static_cast<int8_t>((settings.standby_time << 5) | (settings.filter << 3) | 0));
+    if (i2c_write_register(RegisterAddress::CONTROL_HUMID, 
+            static_cast<int8_t>(settings.osrs_h)) != SUCCESS)
+        return FAILURE;
+
+    if (i2c_write_register(RegisterAddress::CONTROL_MEAS, 
+            static_cast<int8_t>((settings.osrs_t << OSRS_T__POS) 
+            | (settings.osrs_p << OSRS_P__POS) 
+            |  static_cast<char>(mode))) != SUCCESS)
+            return FAILURE;
+
+    if (i2c_write_register(RegisterAddress::CONFIG,
+            static_cast<int8_t>((settings.standby_time << STANDBY__POS)
+            | (settings.filter << FILTER__POS) | 0)) != SUCCESS)
+        return FAILURE;
 }
 
 /*!

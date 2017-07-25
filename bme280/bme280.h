@@ -49,6 +49,11 @@
 #define UNCOMPENSATED_TEMPERATURE__MSK     0xFFFFF
 #define UNCOMPENSATED_PRESSURE_MSK         0xFFFFF
 
+#define OSRS_T__POS                        0x5
+#define OSRS_P__POS                        0x3
+#define STANDBY__POS                       0x5
+#define FILTER__POS                        0x3
+
 #define SOFTRESET_CMD                      0xB6
 
 typedef struct {
