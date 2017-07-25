@@ -323,8 +323,16 @@ int BME280::get_power_mode(SensorMode* mode){
 
 
 /*!
+ * @brief Set sampling settings
  *
- * TODO
+ * @param mode Sensor mode to set 
+ * @param temp_sampling Temperature sampling to set
+ * @param press_sampling Pressure sampling to set
+ * @param humid_sampling Humidity sampling to set
+ * @param filter Filter setting to set
+ * @param duration Stand-by duration
+ *
+ * @return None
  */
 void BME280::set_sampling(SensorMode mode, 
         SensorSampling temp_sampling, 
