@@ -226,9 +226,7 @@ private:
     void get_raw_data();
     int write_power_mode(SensorMode mode);
     int i2c_read_register(RegisterAddress register_address, int8_t* value);
-    int i2c_read_two_bytes(RegisterAddress register_address, int16_t* value); // XXX: unused?
     int i2c_read_two_bytes(RegisterAddress register_address, int8_t value[2]);
-    int i2c_read_three_bytes(RegisterAddress register_address, int32_t* value); // XXX: unused?
     int i2c_read_three_bytes(RegisterAddress register_address, int8_t value[3]);
     int i2c_read_vector(RegisterAddress register_address, int16_t value[3]);
     int i2c_write_register(RegisterAddress register_address, int8_t value);
