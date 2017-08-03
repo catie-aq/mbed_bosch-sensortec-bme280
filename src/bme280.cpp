@@ -349,18 +349,18 @@ void BME280::set_sampling(SensorMode mode,
 
     if (i2c_write_register(RegisterAddress::CONTROL_HUMID, 
             static_cast<int8_t>(settings.osrs_h)) != SUCCESS)
-        return FAILURE;
+        return;
 
     if (i2c_write_register(RegisterAddress::CONTROL_MEAS, 
             static_cast<int8_t>((settings.osrs_t << OSRS_T__POS) 
             | (settings.osrs_p << OSRS_P__POS) 
             |  static_cast<char>(mode))) != SUCCESS)
-            return FAILURE;
+        return;
 
     if (i2c_write_register(RegisterAddress::CONFIG,
             static_cast<int8_t>((settings.standby_time << STANDBY__POS)
             | (settings.filter << FILTER__POS) | 0)) != SUCCESS)
-        return FAILURE;
+        return;
 }
 
 /*!
