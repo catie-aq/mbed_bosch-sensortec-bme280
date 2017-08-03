@@ -101,11 +101,11 @@ int BME280::read_humidity(double* humidity){
     get_raw_data();
 
     double var1, var2, var3, var4, var5, var6;
-    var1 = (static_cast<double>(t_fine)) - 76800.0;
+    var1 = t_fine - 76800.0;
     var2 = (static_cast<double>(calib.dig_H4) * 64.0) + ((static_cast<double>(calib.dig_H5) / 16384.0) * var1);
     var3 = static_cast<double>(uncomp_data.humidity) - var2;
     var4 = (static_cast<double>(calib.dig_H2) / 65536.0);
-    var5 = ((static_cast<double>(calib.dig_H3) / 67108864.0) * var1);
+    var5 = 1.0 + ((static_cast<double>(calib.dig_H3) / 67108864.0) * var1);
     var6 = 1.0 + ((static_cast<double>(calib.dig_H6) / 67108864.0) * var1 * var5);
     var6 = var3 * var4 * (var5 * var6);
     *humidity = var6 * (1.0 - ((static_cast<double>(calib.dig_H1) * var6) / 524288.0));
@@ -147,21 +147,18 @@ int BME280::read_pressure(double* pressure){
     var1 = (var3 + static_cast<double>(calib.dig_P2) * var1) / 524288.0;
     var1 = (1.0 + var1 / 32768.0) * (static_cast<double>(calib.dig_P1));
     /* avoid potential exception caused by division by zero */
-    if (var1){
-        if (pressure){
-            *pressure = 1048576.0 - static_cast<double>(raw_press);
-            *pressure = (*pressure - (var2 / 4096.0)) * 6250.0 / var1;
-            var1 = (static_cast<double>(calib.dig_P9)) * (*pressure) * (*pressure) / 2147483648.0;
-            var2 = (*pressure) * (var1 + var2 + static_cast<double>(calib.dig_P7)) / 16.0;
-            if (*pressure > PRESSURE_MAX)
-                *pressure = PRESSURE_MAX;
-            if (*pressure < PRESSURE_MIN)
-                *pressure = PRESSURE_MIN;
-            return SUCCESS;
-        }
+    if (!var1)
         return FAILURE;
-    }
-    return FAILURE;
+
+    *pressure = 1048576.0 - static_cast<double>(raw_press);
+    *pressure = (*pressure - (var2 / 4096.0)) * 6250.0 / var1;
+    var1 = (static_cast<double>(calib.dig_P9)) * (*pressure) * (*pressure) / 2147483648.0;
+    var2 = (*pressure) * (var1 + var2 + static_cast<double>(calib.dig_P7)) / 16.0;
+    if (*pressure > PRESSURE_MAX)
+        *pressure = PRESSURE_MAX;
+    if (*pressure < PRESSURE_MIN)
+        *pressure = PRESSURE_MIN;
+    return SUCCESS;
 }
 
 /*!
