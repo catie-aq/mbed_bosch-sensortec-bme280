@@ -92,7 +92,6 @@ int BME280::reset(){
  * @return 
  *         0 on success,
  *         1 on failure 
- * FIXME
  */
 int BME280::read_humidity(double* humidity){
     if (!humidity)
@@ -116,10 +115,10 @@ int BME280::read_humidity(double* humidity){
     var6 = 1.0 + ((static_cast<double>(calib.dig_H6) / 67108864.0) * var1 * var5);
     var6 = var3 * var4 * (var5 * var6);
     *humidity = var6 * (1.0 - ((static_cast<double>(calib.dig_H1) * var6) / 524288.0));
-//     if (*humidity > HUMIDITY_MAX)
-//         *humidity = HUMIDITY_MAX
-//     if (*humidity < HUMIDITY_MIN)
-//         *humidity = HUMIDITY_MIN
+    if (*humidity > HUMIDITY_MAX)
+        *humidity = HUMIDITY_MAX;
+    if (*humidity < HUMIDITY_MIN)
+        *humidity = HUMIDITY_MIN;
     return SUCCESS;
 }
 
@@ -194,13 +193,18 @@ int BME280::read_temperature(double* temperature){
     if (uncomp_data.temperature == 0x80000)
     	return FAILURE;
 
-#if 0 // debug
-    printf("Temp raw: %u\n", uncomp_data.temperature);
+#if 1 // debug
+    printf("Temp raw: %d\n", uncomp_data.temperature);
     printf("t: Calib %u %d %d\n", calib.dig_T1, calib.dig_T2, calib.dig_T3);
 #endif
 
-    t_fine = var1 + var2;
-    *temperature = (var1 + var2) / 5120.0;
+    int32_t temp =
+        (((((uncomp_data.temperature >> 3) - (calib.dig_T1 << 1))) * calib.dig_T2) >> 11) +
+        ((((((uncomp_data.temperature >> 4) - calib.dig_T1) * ((uncomp_data.temperature >> 4) - calib.dig_T1)) >> 12) * calib.dig_T3) >> 14);
+
+    t_fine = static_cast<double>(temp);
+    temp = (temp * 5 + 128) >> 8;
+    *temperature = (static_cast<double>(temp) / 100.0);
     if (*temperature > TEMPERATURE_MAX)
         *temperature = TEMPERATURE_MAX;
     if (*temperature < TEMPERATURE_MIN)
@@ -406,34 +410,36 @@ void BME280::get_calib(){
     int8_t s8_dig_1, s8_dig_2;
     int8_t s8_dig[2];
 
-    // XXX: use read_vector or similar function to burst-read?
     /* Temperature-related coefficients */
-    i2c_read_two_bytes(RegisterAddress::DIG_T1, s8_dig);
-    calib.dig_T1 = static_cast<uint16_t>((s8_dig[1] << 8) | (s8_dig[0]));
-    i2c_read_two_bytes(RegisterAddress::DIG_T2, s8_dig);
-    calib.dig_T2 = ((s8_dig[1] << 8) | (s8_dig[0]));
-    i2c_read_two_bytes(RegisterAddress::DIG_T3, s8_dig);
-    calib.dig_T3 = ((s8_dig[1] << 8) | (s8_dig[0]));
+    static char data[18];
+    data[0] = static_cast<char>(RegisterAddress::DIG_T1);
+    _i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true);
+    _i2c->read(static_cast<int>(_i2c_address) << 1, data, 6, false);
+    calib.dig_T1 = static_cast<uint16_t>((data[1] << 8) | (data[0]));
+    calib.dig_T2 = (data[3] << 8) | (data[2]);
+    calib.dig_T3 = (data[5] << 8) | (data[4]);
+
+#if 0
+    printf("dig_T = %u %d %d\n", calib.dig_T1, calib.dig_T2, calib.dig_T3);
+#endif
 
     /* Pressure-related coefficients */
-    i2c_read_two_bytes(RegisterAddress::DIG_P1, s8_dig);
-    calib.dig_P1 = static_cast<uint16_t>((s8_dig[1] << 8 | s8_dig[0]));
-    i2c_read_two_bytes(RegisterAddress::DIG_P2, s8_dig);
-    calib.dig_P2 = (s8_dig[1] << 8 | s8_dig[0]);
-    i2c_read_two_bytes(RegisterAddress::DIG_P3, s8_dig);
-    calib.dig_P3 = (s8_dig[1] << 8 | s8_dig[0]);
-    i2c_read_two_bytes(RegisterAddress::DIG_P4, s8_dig);
-    calib.dig_P4 = (s8_dig[1] << 8 | s8_dig[0]);
-    i2c_read_two_bytes(RegisterAddress::DIG_P5, s8_dig);
-    calib.dig_P5 = (s8_dig[1] << 8 | s8_dig[0]);
-    i2c_read_two_bytes(RegisterAddress::DIG_P6, s8_dig);
-    calib.dig_P6 = (s8_dig[1] << 8 | s8_dig[0]);
-    i2c_read_two_bytes(RegisterAddress::DIG_P7, s8_dig);
-    calib.dig_P7 = (s8_dig[1] << 8 | s8_dig[0]);
-    i2c_read_two_bytes(RegisterAddress::DIG_P8, s8_dig);
-    calib.dig_P8 = (s8_dig[1] << 8 | s8_dig[0]);
-    i2c_read_two_bytes(RegisterAddress::DIG_P9, s8_dig);
-    calib.dig_P9 = (s8_dig[1] << 8 | s8_dig[0]);
+    data[0] = static_cast<char>(RegisterAddress::DIG_P1);
+    _i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true);
+    _i2c->read(static_cast<int>(_i2c_address) << 1, data, 18, false);
+    calib.dig_P1 = (data[ 1] << 8) | data[ 0];
+    calib.dig_P2 = (data[ 3] << 8) | data[ 2];
+    calib.dig_P3 = (data[ 5] << 8) | data[ 4];
+    calib.dig_P4 = (data[ 7] << 8) | data[ 6];
+    calib.dig_P5 = (data[ 9] << 8) | data[ 8];
+    calib.dig_P6 = (data[11] << 8) | data[10];
+    calib.dig_P7 = (data[13] << 8) | data[12];
+    calib.dig_P8 = (data[15] << 8) | data[14];
+    calib.dig_P9 = (data[17] << 8) | data[16];
+
+#if 0
+    printf("dig_P = %u %d %d %d %d %d %d %d %d\n", calib.dig_P1, calib.dig_P2, calib.dig_P3, calib.dig_P4, calib.dig_P5, calib.dig_P6, calib.dig_P7, calib.dig_P8, calib.dig_P9);
+#endif
 
     /* Humidity-related coefficients */
     i2c_read_register(RegisterAddress::DIG_H1, &s8_dig_1);
@@ -465,24 +471,29 @@ void BME280::get_calib(){
 void BME280::get_raw_data(){
     int8_t data_3[3];
     int8_t data_2[2];
+    char cmd[4];
     
-    if (i2c_read_three_bytes(RegisterAddress::PRESS_MSB, data_3) != SUCCESS)
-    	return;
     // raw_pressure = PRESS_MSB | PRESS_LSB | PRESS_XLSB[7:4]
-    uncomp_data.pressure = static_cast<uint32_t>((data_3[0] << 12) | (data_3[1] << 4) | (data_3[2] >> 4));
+    cmd[0] = static_cast<char>(RegisterAddress::PRESS_MSB);
+    _i2c->write((static_cast<int>(_i2c_address)) << 1, cmd, 1, true);
+    _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 3, true);
+    uncomp_data.pressure = static_cast<uint32_t>((cmd[1] << 12) | (cmd[2] << 4) | (cmd[3] >> 4));
     uncomp_data.pressure &= UNCOMPENSATED_PRESSURE_MSK;
 
-    if (i2c_read_three_bytes(RegisterAddress::TEMP_MSB, data_3) != SUCCESS)
-    	return;
+
     // raw_temperature = TEMP_MSB | TEMP_LSB | TEMP_XLSB[7:4]
-    uncomp_data.temperature = ((((data_3[0]) << 12) | ((data_3[1]) << 4) | ((data_3[2]) >> 4)));
+    cmd[0] = static_cast<char>(RegisterAddress::TEMP_MSB);
+    _i2c->write((static_cast<int>(_i2c_address)) << 1, cmd, 1, true);
+    _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 3, true);
+    uncomp_data.temperature = ((cmd[1] << 12) | (cmd[2] << 4) | (cmd[3] >> 4));
     uncomp_data.temperature &= UNCOMPENSATED_TEMPERATURE__MSK;
 
-    if (i2c_read_two_bytes(RegisterAddress::HUMID_MSB, data_2) != SUCCESS)
-    	return;
     // raw_humidity = HUMID_MSB | HUMID_LSB
-    uncomp_data.humidity = static_cast<int16_t>(data_2[0] << EIGHT_BITS_SHIFT |
-            data_2[1]);
+    cmd[0] = static_cast<char>(RegisterAddress::HUMID_MSB);
+    _i2c->write((static_cast<int>(_i2c_address)) << 1, cmd, 1, true);
+    _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 2, true);
+    uncomp_data.humidity = static_cast<int16_t>(cmd[1] << EIGHT_BITS_SHIFT |
+            cmd[2]);
 }
 
 /*!
