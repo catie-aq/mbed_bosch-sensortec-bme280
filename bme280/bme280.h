@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef BME280_H_
-#define BME280_H_
+#ifndef CATIE_SIXTRON_BME280_H_
+#define CATIE_SIXTRON_BME280_H_
 
 #include "mbed.h"
 
@@ -237,4 +237,4 @@ private:
     int i2c_write_register(RegisterAddress register_address, int8_t value);
 };
 
-#endif // BME280_H_
+#endif // CATIE_SIXTRON_BME280_H_
