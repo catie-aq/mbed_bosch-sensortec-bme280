@@ -427,7 +427,7 @@ bool BME280::read_chip_id(){
    int8_t chip_id = INIT_VALUE;
    if (i2c_read_register(RegisterAddress::CHIP_ID, &chip_id) != SUCCESS)
        return FAILURE;
-   if (chip_id!= 0x60){
+   if (chip_id != 0x60){
        wait_ms(1000);
        i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
        return (chip_id != 0x60) ? false : true;
