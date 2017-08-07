@@ -14,17 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CATIE_SIXTRON_BME280_H_
-#define CATIE_SIXTRON_BME280_H_
+#ifndef BME280_H_
+#define BME280_H_
 
 #include "mbed.h"
-
-namespace sixtron {
 
 /**\name MACROS DEFINITIONS                      */
 #define INIT_VALUE                         0
 #define SUCCESS                            0
 #define FAILURE                            1
+#define TEMP_PRESS_CALIB_DATA_LEN          26
 /** Bit value manipulation                       */
 #define ZERO                               0
 #define ONE                                1
@@ -34,21 +33,19 @@ namespace sixtron {
 #define EIGHT_BITS_SHIFT                   8        
 #define SIXTEEN_BITS_SHIFT                 16
 
-#define CONTROL_MEAS__MSK                  0xFC
-
-#define CONTROL_HUMID__MSK                 0x07
-#define CONTROL_HUMID__POS                 0
-#define CONTROL_PRESS__MSK                 0x1C
-#define CONTROL_PRESS__POS                 2
-#define CONTROL_TEMP__MSK                  0x1C
-#define CONTROL_TEMP__POS                  5
-#define FILTER__MSK                        0x1C
-#define FILTER__POS                        2
-#define STANDBY__MSK                       0xE0
-#define STANDBY__POS                       5
-
+/** Temp/Press/Humidity minimum/maximum values   */
 #define TEMPERATURE_MIN                    -40
 #define TEMPERATURE_MAX                    85
+#define PRESSURE_MIN                       30000
+#define PRESSURE_MAX                       110000
+#define HUMIDITY_MIN                       100
+#define HUMIDITY_MAX                       0
+
+#define CONTROL_MEAS__MSK                  0xFC
+
+#define SENSOR_MODE__MSK                   0x03
+#define SENSOR_MODE__POS                   0x00
+
 #define UNCOMPENSATED_TEMPERATURE__MSK     0xFFFFF
 #define UNCOMPENSATED_PRESSURE_MSK         0xFFFFF
 
@@ -59,33 +56,12 @@ namespace sixtron {
 
 #define SOFTRESET_CMD                      0xB6
 
-#define TEMP_PRESS_CALIB_DATA_LEN          26
-
-/*!
- * @brief BME280 environment data structure: temperature, humidity, pressure
- * @note Humidity measured in 
- * @note Pressure measured in hPa
- * @note Temperature measured in °C
- */
 typedef struct {
     double humidity;
     double pressure;
     double temperature;
 } bme280_environment_t;
 
-/*!
- * @brief BME280 uncompensated environment data structure:
- * temperature, humidity, pressure
- */
-typedef struct {
-    uint32_t humidity;
-    uint32_t pressure;
-    uint32_t temperature;
-} bme280_uncomp_data;
-
-/*!
- * @brief BME280 sensor settings structure: oversampling and filter settings
- */
 typedef struct {
     /*! humidity oversampling setting */
     uint8_t osrs_h;
@@ -95,6 +71,7 @@ typedef struct {
     uint8_t osrs_t;
     /*! filter coefficient */
     uint8_t filter;
+    /*! standby time */
     uint8_t standby_time;
 } bme280_settings_t;
 
@@ -135,8 +112,8 @@ class BME280
 public:
     /* I2C addresses */
     enum class I2CAddress : char {
-        Address1           = 0x76,
-        Address2           = 0x77
+        Address1            = 0x76,
+        Address2            = 0x77
     };
 
     enum class RegisterAddress : char {
@@ -179,37 +156,37 @@ public:
     };
 
     enum class SensorMode : char {
-        SLEEP    = 0b00,
-        FORCED   = 0b01,
-        NORMAL   = 0b11
+        SLEEP               = 0b00,
+        FORCED              = 0b01,
+        NORMAL              = 0b11
     };
 
     enum class SensorSampling : char {
-        NONE     = 0b000,
-        X1       = 0b001,
-        X2       = 0b010,
-        X4       = 0b011,
-        X8       = 0b100,
-        X16      = 0b101
+        NONE                = 0b000,
+        OVERSAMPLING_X1     = 0b001,
+        OVERSAMPLING_X2     = 0b010,
+        OVERSAMPLING_X4     = 0b011,
+        OVERSAMPLING_X8     = 0b100,
+        OVERSAMPLING_X16    = 0b101
     };
 
     enum class SensorFilter : char {
-        OFF      = 0b000,
-        X2       = 0b001,
-        X4       = 0b010,
-        X8       = 0b011,
-        X16      = 0b100
+        OFF                 = 0b000,
+        X2                  = 0b001,
+        X4                  = 0b010,
+        X8                  = 0b011,
+        X16                 = 0b100
     };
 
     enum class StandbyDuration : char {
-        MS_0_5   = 0b000,
-        MS_62_5  = 0b001,
-        MS_125   = 0b010,
-        MS_250   = 0b011,
-        MS_500   = 0b100,
-        MS_1000  = 0b101,
-        MS_10    = 0b110,
-        MS_20    = 0b111,
+        MS_0_5              = 0b000,
+        MS_62_5             = 0b001,
+        MS_125              = 0b010,
+        MS_250              = 0b011,
+        MS_500              = 0b100,
+        MS_1000             = 0b101,
+        MS_10               = 0b110,
+        MS_20               = 0b111,
     };
 
     BME280(I2C* i2c, I2CAddress address = I2CAddress::Address1);
@@ -260,5 +237,4 @@ private:
     int i2c_write_register(RegisterAddress register_address, int8_t value);
 };
 
-} // namespace sixtron
-#endif // CATIE_SIXTRON_BME280_H_
+#endif // BME280_H_
