@@ -28,7 +28,6 @@ namespace sixtron {
 
 #define CONCAT_TWO_BYTES(byte1, byte2) \
     (byte1 << EIGHT_BITS_SHIFT | byte2)
-}
 
 /*!
  * @brief Default BME280 contructor
@@ -483,4 +482,4 @@ int BME280::i2c_write_register(RegisterAddress registerAddress, int8_t value){
     return SUCCESS;
 }
 
-}
+} // namespace sixtron
