@@ -61,7 +61,6 @@ namespace {
 #define FILTER__POS                        0x3
 
 #define SOFTRESET_CMD                      0xB6
-}
 
 /*!
  * @brief Default BME280 contructor
@@ -643,3 +642,5 @@ int BME280::i2c_write_register(RegisterAddress register_address, int8_t value){
         return FAILURE;
     return SUCCESS;
 }
+
+} // namespace sixtron
