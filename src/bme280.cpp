@@ -24,7 +24,6 @@ namespace {
 
 #define GET_BITS_POS_0(reg_data, bitname) \
     (reg_data & (bitname##__MSK))
-}
 
 /*!
  * @brief Default BME280 contructor
@@ -606,3 +605,5 @@ int BME280::i2c_write_register(RegisterAddress register_address, int8_t value){
         return FAILURE;
     return SUCCESS;
 }
+
+} // namespace sixtron
