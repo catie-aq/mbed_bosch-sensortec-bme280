@@ -19,43 +19,6 @@
 
 #include "mbed.h"
 
-/**\name MACROS DEFINITIONS                      */
-#define INIT_VALUE                         0
-#define SUCCESS                            0
-#define FAILURE                            1
-#define TEMP_PRESS_CALIB_DATA_LEN          26
-/** Bit value manipulation                       */
-#define ZERO                               0
-#define ONE                                1
-#define ONE_BIT_SHIFT                      1        
-#define TWO_BITS_SHIFT                     2        
-#define FOUR_BITS_SHIFT                    4
-#define EIGHT_BITS_SHIFT                   8        
-#define SIXTEEN_BITS_SHIFT                 16
-
-/** Temp/Press/Humidity minimum/maximum values   */
-#define TEMPERATURE_MIN                    -40
-#define TEMPERATURE_MAX                    85
-#define PRESSURE_MIN                       30000
-#define PRESSURE_MAX                       110000
-#define HUMIDITY_MIN                       100
-#define HUMIDITY_MAX                       0
-
-#define CONTROL_MEAS__MSK                  0xFC
-
-#define SENSOR_MODE__MSK                   0x03
-#define SENSOR_MODE__POS                   0x00
-
-#define UNCOMPENSATED_TEMPERATURE__MSK     0xFFFFF
-#define UNCOMPENSATED_PRESSURE_MSK         0xFFFFF
-
-#define OSRS_T__POS                        0x5
-#define OSRS_P__POS                        0x3
-#define STANDBY__POS                       0x5
-#define FILTER__POS                        0x3
-
-#define SOFTRESET_CMD                      0xB6
-
 typedef struct {
     double humidity;
     double pressure;
