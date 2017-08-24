@@ -17,7 +17,7 @@
 
 #include "bme280.h"
 
-namespace {
+namespace sixtron {
 #define SET_BITS_POS_0(reg_data, bitname, data) \
     ((reg_data & ~(bitname##__MSK)) |\
      (data & bitname##__MSK))

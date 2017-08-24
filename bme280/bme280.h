@@ -19,6 +19,8 @@
 
 #include "mbed.h"
 
+namespace sixtron {
+
 typedef struct {
     double humidity;
     double pressure;
@@ -199,5 +201,7 @@ private:
     int i2c_read_vector(RegisterAddress register_address, int16_t value[3]);
     int i2c_write_register(RegisterAddress register_address, int8_t value);
 };
+
+} // namespace sixtron
 
 #endif // CATIE_SIXTRON_BME280_H_
