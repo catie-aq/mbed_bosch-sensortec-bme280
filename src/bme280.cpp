@@ -135,13 +135,6 @@ int BME280::read_humidity(double* humidity){
 
     get_raw_data();
 
-#if 0
-    printf("raw humidity: %d\n", uncomp_data.humidity);
-    printf("H calib: %u %d %d %d %d %d\n", 
-            calib.dig_H1, calib.dig_H2, calib.dig_H3,
-            calib.dig_H4, calib.dig_H5, calib.dig_H5);
-#endif
-
     double var1, var2, var3, var4, var5, var6;
     var1 = t_fine - 76800.0;
     var2 = (static_cast<double>(calib.dig_H4) * 64.0) + ((static_cast<double>(calib.dig_H5) / 16384.0) * var1);
@@ -177,13 +170,6 @@ int BME280::read_pressure(double* pressure){
     // Pressure may have been skipped
     if (uncomp_data.pressure == 0x80000)
         return FAILURE;
-
-#if 0
-    printf("raw pressure: %d\n", uncomp_data.pressure);
-    printf("P calib: %u %d %d %d %d %d %d %d %d\n", 
-            calib.dig_P1, calib.dig_P2, calib.dig_P3, calib.dig_P4,
-            calib.dig_P5, calib.dig_P6, calib.dig_P7, calib.dig_P8, calib.dig_P9);
-#endif
 
     double var1, var2, var3;
     int32_t raw_press = uncomp_data.pressure;
@@ -228,11 +214,6 @@ int BME280::read_temperature(double* temperature){
     // Temperature may have been skipped
     if (uncomp_data.temperature == 0x80000)
     	return FAILURE;
-
-#if 1 // debug
-    printf("Temp raw: %d\n", uncomp_data.temperature);
-    printf("t: Calib %u %d %d\n", calib.dig_T1, calib.dig_T2, calib.dig_T3);
-#endif
 
     int32_t temp =
         (((((uncomp_data.temperature >> 3) - (calib.dig_T1 << 1))) * calib.dig_T2) >> 11) +
