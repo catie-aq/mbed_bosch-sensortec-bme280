@@ -62,6 +62,8 @@ namespace sixtron {
 
 #define SOFTRESET_CMD                      0xB6
 
+#define CHIP_ID                            0x60
+
 BME280::BME280(I2C* i2c, I2CAddress i2c_address) :
     _i2c(i2c), _i2c_address(i2c_address) {
     _sensor_mode = SensorMode::NORMAL;
@@ -73,10 +75,9 @@ bool BME280::initialize() {
     if (!read_chip_id())
         return false;
     else {
-        printf("Chip ID: 0x%X\n", 0x60);
-        _chip_id = 0x60;
+        printf("Chip ID: 0x%X\n", CHIP_ID);
+        _chip_id = CHIP_ID;
     }
-
     if (reset() != SUCCESS)
         return false;
 
