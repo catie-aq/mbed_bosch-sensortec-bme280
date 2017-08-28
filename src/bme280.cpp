@@ -455,10 +455,6 @@ void BME280::get_calib(){
     calib.dig_T2 = (data[3] << 8) | (data[2]);
     calib.dig_T3 = (data[5] << 8) | (data[4]);
 
-#if 0
-    printf("dig_T = %u %d %d\n", calib.dig_T1, calib.dig_T2, calib.dig_T3);
-#endif
-
     /* Pressure-related coefficients */
     data[0] = static_cast<char>(RegisterAddress::DIG_P1);
     _i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true);
@@ -473,9 +469,6 @@ void BME280::get_calib(){
     calib.dig_P8 = (data[15] << 8) | data[14];
     calib.dig_P9 = (data[17] << 8) | data[16];
 
-#if 0
-    printf("dig_P = %u %d %d %d %d %d %d %d %d\n", calib.dig_P1, calib.dig_P2, calib.dig_P3, calib.dig_P4, calib.dig_P5, calib.dig_P6, calib.dig_P7, calib.dig_P8, calib.dig_P9);
-#endif
 
     /* Humidity-related coefficients */
     i2c_read_register(RegisterAddress::DIG_H1, &s8_dig_1);
@@ -486,12 +479,10 @@ void BME280::get_calib(){
     calib.dig_H3 = static_cast<uint8_t>(s8_dig_1);
     i2c_read_two_bytes(RegisterAddress::DIG_H4, s8_dig);
     calib.dig_H4 = (s8_dig[0] << 4 | (s8_dig[1] & 0xF));
-
-    //FIXME
-
-    i2c_read_register(RegisterAddress::DIG_H5, s8_dig);
+    i2c_read_register(RegisterAddress::DIG_H5, &s8_dig_1);
     i2c_read_register(static_cast<RegisterAddress>(static_cast<char>(RegisterAddress::DIG_H5) + 1), &s8_dig_2);
-    calib.dig_H5 = (s8_dig[1] << 4 | (s8_dig[0] & 0xF));
+    calib.dig_H5 = (s8_dig_2 << 4 | ((s8_dig_1 >> FOUR_BITS_SHIFT) & 0xF));
+
     i2c_read_register(RegisterAddress::DIG_H6, &calib.dig_H6);
 
 }
