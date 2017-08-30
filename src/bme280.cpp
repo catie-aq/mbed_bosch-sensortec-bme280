@@ -44,8 +44,8 @@ namespace sixtron {
 #define TEMPERATURE_MAX                    85
 #define PRESSURE_MIN                       30000
 #define PRESSURE_MAX                       110000
-#define HUMIDITY_MIN                       100
-#define HUMIDITY_MAX                       0
+#define HUMIDITY_MIN                       0
+#define HUMIDITY_MAX                       100
 
 #define CONTROL_MEAS__MSK                  0xFC
 
