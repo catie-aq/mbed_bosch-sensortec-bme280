@@ -45,7 +45,7 @@ namespace sixtron {
 #define PRESSURE_MIN                       30000
 #define PRESSURE_MAX                       110000
 #define HUMIDITY_MIN                       0
-#define HUMIDITY_MAX                       100
+#define HUMIDITY_MAX                       419430400
 
 #define CONTROL_MEAS__MSK                  0xFC
 
@@ -135,16 +135,6 @@ int BME280::read_humidity(float* humidity){
 
     get_raw_data();
 
-    /*double var1, var2, var3, var4, var5, var6;
-    var1 = t_fine - 76800.0;
-    var2 = (static_cast<double>(calib.dig_H4) * 64.0) + ((static_cast<double>(calib.dig_H5) / 16384.0) * var1);
-    var3 = static_cast<double>(uncomp_data.humidity) - var2;
-    var4 = (static_cast<double>(calib.dig_H2) / 65536.0);
-    var5 = 1.0 + ((static_cast<double>(calib.dig_H3) / 67108864.0) * var1);
-    var6 = 1.0 + ((static_cast<double>(calib.dig_H6) / 67108864.0) * var1 * var5);
-    var6 = var3 * var4 * (var5 * var6);
-    *humidity = var6 * (1.0 - ((static_cast<double>(calib.dig_H1) * var6) / 524288.0));*/
-
     int32_t var1 = t_fine - 76800;
     var1 = (((((uncomp_data.humidity << 14) - (((int32_t)calib.dig_H4) << 20) -
            (((int32_t)calib.dig_H5) * var1)) + ((int32_t)16384)) >> 15) *
@@ -155,14 +145,10 @@ int BME280::read_humidity(float* humidity){
     var1 = (var1 - (((((var1 >> 15) * (var1 >> 15)) >> 7) *
                                    ((int32_t)calib.dig_H1)) >> 4));
 
-	var1 = (var1 < 0) ? 0 : var1;
-	var1 = (var1 > 419430400) ? 419430400 : var1;
+	var1 = (var1 < HUMIDITY_MIN) ? HUMIDITY_MIN : var1;
+	var1 = (var1 > HUMIDITY_MAX) ? HUMIDITY_MAX : var1;
 	*humidity = static_cast<float>(var1>>12)/1024;
 
-    /*if (*humidity > HUMIDITY_MAX)
-        *humidity = HUMIDITY_MAX;
-    if (*humidity < HUMIDITY_MIN)
-        *humidity = HUMIDITY_MIN;*/
     return SUCCESS;
 }
 
