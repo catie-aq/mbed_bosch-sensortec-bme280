@@ -157,7 +157,7 @@ int BME280::read_humidity(float* humidity){
 
 	var1 = (var1 < 0) ? 0 : var1;
 	var1 = (var1 > 419430400) ? 419430400 : var1;
-	*humidity = static_cast<float>(var1>>12);
+	*humidity = static_cast<float>(var1>>12)/1024;
 
     /*if (*humidity > HUMIDITY_MAX)
         *humidity = HUMIDITY_MAX;
@@ -515,7 +515,7 @@ void BME280::get_raw_data(){
     cmd[0] = static_cast<char>(RegisterAddress::HUMID_MSB);
     _i2c->write((static_cast<int>(_i2c_address)) << 1, cmd, 1, true);
     _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 2);
-    uncomp_data.humidity = static_cast<int16_t>(cmd[1] << EIGHT_BITS_SHIFT |
+    uncomp_data.humidity = static_cast<int32_t>(cmd[1] << EIGHT_BITS_SHIFT |
             cmd[2]);
 }
 

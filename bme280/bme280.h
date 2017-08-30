@@ -42,7 +42,7 @@ typedef struct {
 
 typedef struct {
     /*! uncompensated humidity */
-    int16_t humidity;
+    int32_t humidity;
     /*! uncompensated pressure */
     uint32_t pressure;
     /*! uncompensated temperature */
