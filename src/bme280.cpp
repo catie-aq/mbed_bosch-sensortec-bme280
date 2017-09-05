@@ -44,8 +44,8 @@ namespace sixtron {
 #define TEMPERATURE_MAX                    85
 #define PRESSURE_MIN                       30000
 #define PRESSURE_MAX                       110000
-#define HUMIDITY_MIN                       100
-#define HUMIDITY_MAX                       0
+#define HUMIDITY_MIN                       0
+#define HUMIDITY_MAX                       419430400
 
 #define CONTROL_MEAS__MSK                  0xFC
 
@@ -129,25 +129,26 @@ int BME280::reset(){
  *         0 on success,
  *         1 on failure 
  */
-int BME280::read_humidity(double* humidity){
+int BME280::read_humidity(float* humidity){
     if (!humidity)
         return FAILURE;
 
     get_raw_data();
 
-    double var1, var2, var3, var4, var5, var6;
-    var1 = t_fine - 76800.0;
-    var2 = (static_cast<double>(calib.dig_H4) * 64.0) + ((static_cast<double>(calib.dig_H5) / 16384.0) * var1);
-    var3 = static_cast<double>(uncomp_data.humidity) - var2;
-    var4 = (static_cast<double>(calib.dig_H2) / 65536.0);
-    var5 = 1.0 + ((static_cast<double>(calib.dig_H3) / 67108864.0) * var1);
-    var6 = 1.0 + ((static_cast<double>(calib.dig_H6) / 67108864.0) * var1 * var5);
-    var6 = var3 * var4 * (var5 * var6);
-    *humidity = var6 * (1.0 - ((static_cast<double>(calib.dig_H1) * var6) / 524288.0));
-    if (*humidity > HUMIDITY_MAX)
-        *humidity = HUMIDITY_MAX;
-    if (*humidity < HUMIDITY_MIN)
-        *humidity = HUMIDITY_MIN;
+    int32_t var1 = t_fine - 76800;
+    var1 = (((((uncomp_data.humidity << 14) - (((int32_t)calib.dig_H4) << 20) -
+           (((int32_t)calib.dig_H5) * var1)) + ((int32_t)16384)) >> 15) *
+           (((((((var1 * ((int32_t)calib.dig_H6)) >> 10) *
+           (((var1 * ((int32_t)calib.dig_H3)) >> 11) + ((int32_t)32768))) >> 10) +
+           ((int32_t)2097152)) * ((int32_t)calib.dig_H2) + 8192) >> 14));
+
+    var1 = (var1 - (((((var1 >> 15) * (var1 >> 15)) >> 7) *
+                                   ((int32_t)calib.dig_H1)) >> 4));
+
+	var1 = (var1 < HUMIDITY_MIN) ? HUMIDITY_MIN : var1;
+	var1 = (var1 > HUMIDITY_MAX) ? HUMIDITY_MAX : var1;
+	*humidity = static_cast<float>(var1>>12)/1024;
+
     return SUCCESS;
 }
 
@@ -189,10 +190,10 @@ int BME280::read_pressure(double* pressure){
     *pressure = (*pressure - (var2 / 4096.0)) * 6250.0 / var1;
     var1 = (static_cast<double>(calib.dig_P9)) * (*pressure) * (*pressure) / 2147483648.0;
     var2 = (*pressure) * (var1 + var2 + static_cast<double>(calib.dig_P7)) / 16.0;
-    if (*pressure > PRESSURE_MAX)
+    /*if (*pressure > PRESSURE_MAX)
         *pressure = PRESSURE_MAX;
     if (*pressure < PRESSURE_MIN)
-        *pressure = PRESSURE_MIN;
+        *pressure = PRESSURE_MIN;*/
     return SUCCESS;
 }
 
@@ -484,7 +485,7 @@ void BME280::get_raw_data(){
     // raw_pressure = PRESS_MSB | PRESS_LSB | PRESS_XLSB[7:4]
     cmd[0] = static_cast<char>(RegisterAddress::PRESS_MSB);
     _i2c->write((static_cast<int>(_i2c_address)) << 1, cmd, 1, true);
-    _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 3, true);
+    _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 3);
     uncomp_data.pressure = static_cast<uint32_t>((cmd[1] << 12) | (cmd[2] << 4) | (cmd[3] >> 4));
     uncomp_data.pressure &= UNCOMPENSATED_PRESSURE_MSK;
 
@@ -492,15 +493,15 @@ void BME280::get_raw_data(){
     // raw_temperature = TEMP_MSB | TEMP_LSB | TEMP_XLSB[7:4]
     cmd[0] = static_cast<char>(RegisterAddress::TEMP_MSB);
     _i2c->write((static_cast<int>(_i2c_address)) << 1, cmd, 1, true);
-    _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 3, true);
+    _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 3);
     uncomp_data.temperature = ((cmd[1] << 12) | (cmd[2] << 4) | (cmd[3] >> 4));
     uncomp_data.temperature &= UNCOMPENSATED_TEMPERATURE__MSK;
 
     // raw_humidity = HUMID_MSB | HUMID_LSB
     cmd[0] = static_cast<char>(RegisterAddress::HUMID_MSB);
     _i2c->write((static_cast<int>(_i2c_address)) << 1, cmd, 1, true);
-    _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 2, true);
-    uncomp_data.humidity = static_cast<int16_t>(cmd[1] << EIGHT_BITS_SHIFT |
+    _i2c->read((static_cast<int>(_i2c_address)) << 1, &cmd[1], 2);
+    uncomp_data.humidity = static_cast<int32_t>(cmd[1] << EIGHT_BITS_SHIFT |
             cmd[2]);
 }
 

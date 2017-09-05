@@ -22,7 +22,7 @@
 namespace sixtron {
 
 typedef struct {
-    double humidity;
+    float humidity;
     double pressure;
     double temperature;
 } bme280_environment_t;
@@ -42,7 +42,7 @@ typedef struct {
 
 typedef struct {
     /*! uncompensated humidity */
-    int16_t humidity;
+    int32_t humidity;
     /*! uncompensated pressure */
     uint32_t pressure;
     /*! uncompensated temperature */
@@ -161,7 +161,7 @@ public:
     int resume();
     int reset();
 
-    int read_humidity(double* humidity);
+    int read_humidity(float* humidity);
     int read_pressure(double* pressure);
     int read_temperature(double* temperature);
     int read_env_data(bme280_environment_t* env);
