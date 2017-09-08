@@ -161,9 +161,10 @@ public:
     int resume();
     int reset();
 
-    int read_humidity(float* humidity);
-    int read_pressure(double* pressure);
-    int read_temperature(double* temperature);
+    float read_humidity();
+    float read_pressure();
+    float read_temperature();
+
     int read_env_data(bme280_environment_t* env);
 
     void take_forced_measurement();
@@ -189,7 +190,7 @@ private:
     bme280_settings_t settings;
     bme280_calib_data_t calib;
     bme280_raw_data_t uncomp_data;
-    double t_fine;
+    int32_t t_fine;
 
     bool read_chip_id();
     void get_calib();
