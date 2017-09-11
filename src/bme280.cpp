@@ -121,8 +121,8 @@ int BME280::reset() {
 }
 
 //TODO : doc
-float BME280::read_humidity() {
-	if (isnan(read_temperature())) { // must be done first to get t_fine
+float BME280::humidity() {
+	if (isnan(temperature())) { // must be done first to get t_fine
 		return NAN;
 	}
 
@@ -144,9 +144,9 @@ float BME280::read_humidity() {
 }
 
 // TODO : doc
-float BME280::read_pressure() {
+float BME280::pressure() {
 	int64_t var1, var2, pressure;
-	if (isnan(read_temperature())) { // must be done first to get t_fine
+	if (isnan(temperature())) { // must be done first to get t_fine
 		return NAN;
 	}
 
@@ -187,7 +187,7 @@ float BME280::read_pressure() {
  *         0 on success,
  *         1 on failure
  */
-float BME280::read_temperature() {
+float BME280::temperature() {
 	int32_t var1, var2;
 	get_raw_data();
 

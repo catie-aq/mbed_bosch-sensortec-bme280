@@ -161,9 +161,9 @@ public:
     int resume();
     int reset();
 
-    float read_humidity();
-    float read_pressure();
-    float read_temperature();
+    float humidity();
+    float pressure();
+    float temperature();
 
     int read_env_data(bme280_environment_t* env);
 
