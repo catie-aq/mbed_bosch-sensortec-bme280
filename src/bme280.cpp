@@ -122,7 +122,9 @@ int BME280::reset() {
 
 //TODO : doc
 float BME280::read_humidity() {
-	read_temperature();
+	if (isnan(read_temperature())) { // must be done first to get t_fine
+		return NAN;
+	}
 
 	int32_t var1 = t_fine - 76800;
 	var1 = (((((uncomp_data.humidity << 14) - (((int32_t) calib.dig_H4) << 20)
@@ -144,7 +146,9 @@ float BME280::read_humidity() {
 // TODO : doc
 float BME280::read_pressure() {
 	int64_t var1, var2, pressure;
-	read_temperature(); // must be done first to get t_fine
+	if (isnan(read_temperature())) { // must be done first to get t_fine
+		return NAN;
+	}
 
 	if (uncomp_data.pressure == 0x80000) { // value in case pressure measurement was disabled
 		return NAN;
@@ -195,9 +199,10 @@ float BME280::read_temperature() {
 	var1 = ((((uncomp_data.temperature >> 3) - ((int32_t) calib.dig_T1 << 1)))
 			* ((int32_t) calib.dig_T2)) >> 11;
 
-	var2 = (((((uncomp_data.temperature >> 4) - ((int32_t) calib.dig_T1))
-			* ((uncomp_data.temperature >> 4) - ((int32_t) calib.dig_T1))) >> 12)
-			* ((int32_t) calib.dig_T3)) >> 14;
+	var2 =
+			(((((uncomp_data.temperature >> 4) - ((int32_t) calib.dig_T1))
+					* ((uncomp_data.temperature >> 4) - ((int32_t) calib.dig_T1)))
+					>> 12) * ((int32_t) calib.dig_T3)) >> 14;
 
 	t_fine = var1 + var2;
 
