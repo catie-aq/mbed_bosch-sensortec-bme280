@@ -75,14 +75,12 @@ typedef struct {
 class BME280 {
 public:
     /* I2C addresses */
-    enum class I2CAddress
-        : char {
-            Address1 = 0x76, Address2 = 0x77
+    enum class I2CAddress : char {
+        Address1 = 0x76, Address2 = 0x77
     };
 
-    enum class RegisterAddress
-        : char {
-            CHIP_ID = 0xD0,
+    enum class RegisterAddress : char {
+        CHIP_ID = 0xD0,
         RESET = 0xE0,
         /* Calibration registers */
         DIG_T1 = 0x88,
@@ -120,14 +118,14 @@ public:
         HUMID_LSB = 0xFE
     };
 
-    enum class SensorMode
-        : char {
-            SLEEP = 0b00, FORCED = 0b01, NORMAL = 0b11
+    enum class SensorMode : char {
+        SLEEP = 0b00, 
+        FORCED = 0b01, 
+        NORMAL = 0b11
     };
 
-    enum class SensorSampling
-        : char {
-            NONE = 0b000,
+    enum class SensorSampling : char {
+        NONE = 0b000,
         OVERSAMPLING_X1 = 0b001,
         OVERSAMPLING_X2 = 0b010,
         OVERSAMPLING_X4 = 0b011,
@@ -135,14 +133,12 @@ public:
         OVERSAMPLING_X16 = 0b101
     };
 
-    enum class SensorFilter
-        : char {
-            OFF = 0b000, X2 = 0b001, X4 = 0b010, X8 = 0b011, X16 = 0b100
+    enum class SensorFilter : char {
+        OFF = 0b000, X2 = 0b001, X4 = 0b010, X8 = 0b011, X16 = 0b100
     };
 
-    enum class StandbyDuration
-        : char {
-            MS_0_5 = 0b000,
+    enum class StandbyDuration : char {
+        MS_0_5 = 0b000,
         MS_62_5 = 0b001,
         MS_125 = 0b010,
         MS_250 = 0b011,
@@ -183,7 +179,6 @@ public:
     bme280_settings_t get_settings() {
         return settings;
     }
-    ;
 
 private:
     char _chip_id = 0;
