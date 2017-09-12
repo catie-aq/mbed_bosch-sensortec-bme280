@@ -51,107 +51,105 @@ typedef struct {
 
 typedef struct {
     uint16_t dig_T1;
-    int16_t  dig_T2;
-    int16_t  dig_T3;
+    int16_t dig_T2;
+    int16_t dig_T3;
 
     uint16_t dig_P1;
-    int16_t  dig_P2;
-    int16_t  dig_P3;
-    int16_t  dig_P4;
-    int16_t  dig_P5;
-    int16_t  dig_P6;
-    int16_t  dig_P7;
-    int16_t  dig_P8;
-    int16_t  dig_P9;
+    int16_t dig_P2;
+    int16_t dig_P3;
+    int16_t dig_P4;
+    int16_t dig_P5;
+    int16_t dig_P6;
+    int16_t dig_P7;
+    int16_t dig_P8;
+    int16_t dig_P9;
 
-    uint8_t  dig_H1;
-    int16_t  dig_H2;
-    uint8_t  dig_H3;
-    int16_t  dig_H4;
-    int16_t  dig_H5;
-    int8_t   dig_H6;
+    uint8_t dig_H1;
+    int16_t dig_H2;
+    uint8_t dig_H3;
+    int16_t dig_H4;
+    int16_t dig_H5;
+    int8_t dig_H6;
 } bme280_calib_data_t;
 
-class BME280
-{
+class BME280 {
 public:
     /* I2C addresses */
-    enum class I2CAddress : char {
-        Address1            = 0x76,
-        Address2            = 0x77
+    enum class I2CAddress
+        : char {
+            Address1 = 0x76, Address2 = 0x77
     };
 
-    enum class RegisterAddress : char {
-        CHIP_ID             = 0xD0,
-        RESET               = 0xE0,
+    enum class RegisterAddress
+        : char {
+            CHIP_ID = 0xD0,
+        RESET = 0xE0,
         /* Calibration registers */
-        DIG_T1              = 0x88,
-        DIG_T2              = 0x8A,
-        DIG_T3              = 0x8D,
+        DIG_T1 = 0x88,
+        DIG_T2 = 0x8A,
+        DIG_T3 = 0x8D,
 
-        DIG_P1              = 0x8E,
-        DIG_P2              = 0x90,
-        DIG_P3              = 0x92,
-        DIG_P4              = 0x94,
-        DIG_P5              = 0x96,
-        DIG_P6              = 0x98,
-        DIG_P7              = 0x9A,
-        DIG_P8              = 0x9C,
-        DIG_P9              = 0x9E,
+        DIG_P1 = 0x8E,
+        DIG_P2 = 0x90,
+        DIG_P3 = 0x92,
+        DIG_P4 = 0x94,
+        DIG_P5 = 0x96,
+        DIG_P6 = 0x98,
+        DIG_P7 = 0x9A,
+        DIG_P8 = 0x9C,
+        DIG_P9 = 0x9E,
 
-        DIG_H1              = 0xA1,
-        DIG_H2              = 0xE1,
-        DIG_H3              = 0xE3,
-        DIG_H4              = 0xE4,
-        DIG_H5              = 0xE5,
-        DIG_H6              = 0xE7,
+        DIG_H1 = 0xA1,
+        DIG_H2 = 0xE1,
+        DIG_H3 = 0xE3,
+        DIG_H4 = 0xE4,
+        DIG_H5 = 0xE5,
+        DIG_H6 = 0xE7,
 
-        CONTROL_HUMID       = 0xF2,
-        STATUS              = 0XF3,
-        CONTROL_MEAS        = 0xF4,
-        CONFIG              = 0xF5,
-        PRESS_MSB           = 0xF7,
-        PRESS_LSB           = 0xF8,
-        PRESS_XLSB          = 0xF9,
-        TEMP_MSB            = 0xFA,
-        TEMP_LSB            = 0xFB,
-        TEMP_XLSB           = 0xFC,
-        HUMID_MSB           = 0xFD,
-        HUMID_LSB           = 0xFE
+        CONTROL_HUMID = 0xF2,
+        STATUS = 0XF3,
+        CONTROL_MEAS = 0xF4,
+        CONFIG = 0xF5,
+        PRESS_MSB = 0xF7,
+        PRESS_LSB = 0xF8,
+        PRESS_XLSB = 0xF9,
+        TEMP_MSB = 0xFA,
+        TEMP_LSB = 0xFB,
+        TEMP_XLSB = 0xFC,
+        HUMID_MSB = 0xFD,
+        HUMID_LSB = 0xFE
     };
 
-    enum class SensorMode : char {
-        SLEEP               = 0b00,
-        FORCED              = 0b01,
-        NORMAL              = 0b11
+    enum class SensorMode
+        : char {
+            SLEEP = 0b00, FORCED = 0b01, NORMAL = 0b11
     };
 
-    enum class SensorSampling : char {
-        NONE                = 0b000,
-        OVERSAMPLING_X1     = 0b001,
-        OVERSAMPLING_X2     = 0b010,
-        OVERSAMPLING_X4     = 0b011,
-        OVERSAMPLING_X8     = 0b100,
-        OVERSAMPLING_X16    = 0b101
+    enum class SensorSampling
+        : char {
+            NONE = 0b000,
+        OVERSAMPLING_X1 = 0b001,
+        OVERSAMPLING_X2 = 0b010,
+        OVERSAMPLING_X4 = 0b011,
+        OVERSAMPLING_X8 = 0b100,
+        OVERSAMPLING_X16 = 0b101
     };
 
-    enum class SensorFilter : char {
-        OFF                 = 0b000,
-        X2                  = 0b001,
-        X4                  = 0b010,
-        X8                  = 0b011,
-        X16                 = 0b100
+    enum class SensorFilter
+        : char {
+            OFF = 0b000, X2 = 0b001, X4 = 0b010, X8 = 0b011, X16 = 0b100
     };
 
-    enum class StandbyDuration : char {
-        MS_0_5              = 0b000,
-        MS_62_5             = 0b001,
-        MS_125              = 0b010,
-        MS_250              = 0b011,
-        MS_500              = 0b100,
-        MS_1000             = 0b101,
-        MS_10               = 0b110,
-        MS_20               = 0b111,
+    enum class StandbyDuration
+        : char {
+            MS_0_5 = 0b000,
+        MS_62_5 = 0b001,
+        MS_125 = 0b010,
+        MS_250 = 0b011,
+        MS_500 = 0b100,
+        MS_1000 = 0b101,
+        MS_10 = 0b110,
+        MS_20 = 0b111,
     };
 
     BME280(I2C* i2c, I2CAddress address = I2CAddress::Address1);
@@ -173,14 +171,19 @@ public:
     int get_power_mode(SensorMode* mode);
 
     void set_sampling(SensorMode mode = SensorMode::NORMAL,
-                      SensorSampling temp_sampling = SensorSampling::OVERSAMPLING_X16, 
-                      SensorSampling press_sampling = SensorSampling::OVERSAMPLING_X16,
-                      SensorSampling humid_sampling = SensorSampling::OVERSAMPLING_X16,
-                      SensorFilter filter = SensorFilter::OFF,
-                      StandbyDuration duration = StandbyDuration::MS_0_5);
+            SensorSampling temp_sampling = SensorSampling::OVERSAMPLING_X16,
+            SensorSampling press_sampling = SensorSampling::OVERSAMPLING_X16,
+            SensorSampling humid_sampling = SensorSampling::OVERSAMPLING_X16,
+            SensorFilter filter = SensorFilter::OFF, StandbyDuration duration =
+                    StandbyDuration::MS_0_5);
 
-    char chip_id() { return _chip_id; }
-    bme280_settings_t get_settings() { return settings; };
+    char chip_id() {
+        return _chip_id;
+    }
+    bme280_settings_t get_settings() {
+        return settings;
+    }
+    ;
 
 private:
     char _chip_id = 0;
