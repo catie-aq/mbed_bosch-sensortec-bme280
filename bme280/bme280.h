@@ -51,29 +51,28 @@ typedef struct {
 
 typedef struct {
     uint16_t dig_T1;
-    int16_t  dig_T2;
-    int16_t  dig_T3;
+    int16_t dig_T2;
+    int16_t dig_T3;
 
     uint16_t dig_P1;
-    int16_t  dig_P2;
-    int16_t  dig_P3;
-    int16_t  dig_P4;
-    int16_t  dig_P5;
-    int16_t  dig_P6;
-    int16_t  dig_P7;
-    int16_t  dig_P8;
-    int16_t  dig_P9;
+    int16_t dig_P2;
+    int16_t dig_P3;
+    int16_t dig_P4;
+    int16_t dig_P5;
+    int16_t dig_P6;
+    int16_t dig_P7;
+    int16_t dig_P8;
+    int16_t dig_P9;
 
-    uint8_t  dig_H1;
-    int16_t  dig_H2;
-    uint8_t  dig_H3;
-    int16_t  dig_H4;
-    int16_t  dig_H5;
-    int8_t   dig_H6;
+    uint8_t dig_H1;
+    int16_t dig_H2;
+    uint8_t dig_H3;
+    int16_t dig_H4;
+    int16_t dig_H5;
+    int8_t dig_H6;
 } bme280_calib_data_t;
 
-class BME280
-{
+class BME280 {
 public:
     /* I2C addresses */
     enum class I2CAddress : char {
@@ -84,6 +83,7 @@ public:
     enum class RegisterAddress : char {
         CHIP_ID             = 0xD0,
         RESET               = 0xE0,
+
         /* Calibration registers */
         DIG_T1              = 0x88,
         DIG_T2              = 0x8A,
@@ -98,7 +98,6 @@ public:
         DIG_P7              = 0x9A,
         DIG_P8              = 0x9C,
         DIG_P9              = 0x9E,
-
         DIG_H1              = 0xA1,
         DIG_H2              = 0xE1,
         DIG_H3              = 0xE3,
@@ -151,7 +150,7 @@ public:
         MS_500              = 0b100,
         MS_1000             = 0b101,
         MS_10               = 0b110,
-        MS_20               = 0b111,
+        MS_20               = 0b111
     };
 
     BME280(I2C* i2c, I2CAddress address = I2CAddress::Address1);
@@ -161,9 +160,10 @@ public:
     int resume();
     int reset();
 
-    int read_humidity(float* humidity);
-    int read_pressure(double* pressure);
-    int read_temperature(double* temperature);
+    float humidity();
+    float pressure();
+    float temperature();
+
     int read_env_data(bme280_environment_t* env);
 
     void take_forced_measurement();
@@ -172,14 +172,18 @@ public:
     int get_power_mode(SensorMode* mode);
 
     void set_sampling(SensorMode mode = SensorMode::NORMAL,
-                      SensorSampling temp_sampling = SensorSampling::OVERSAMPLING_X16, 
-                      SensorSampling press_sampling = SensorSampling::OVERSAMPLING_X16,
-                      SensorSampling humid_sampling = SensorSampling::OVERSAMPLING_X16,
-                      SensorFilter filter = SensorFilter::OFF,
-                      StandbyDuration duration = StandbyDuration::MS_0_5);
+        SensorSampling temp_sampling = SensorSampling::OVERSAMPLING_X16,
+        SensorSampling press_sampling = SensorSampling::OVERSAMPLING_X16,
+        SensorSampling humid_sampling = SensorSampling::OVERSAMPLING_X16,
+        SensorFilter filter = SensorFilter::OFF, StandbyDuration duration =
+            StandbyDuration::MS_0_5);
 
-    char chip_id() { return _chip_id; }
-    bme280_settings_t get_settings() { return settings; };
+    char chip_id() {
+        return _chip_id;
+    }
+    bme280_settings_t get_settings() {
+        return settings;
+    }
 
 private:
     char _chip_id = 0;
@@ -189,7 +193,7 @@ private:
     bme280_settings_t settings;
     bme280_calib_data_t calib;
     bme280_raw_data_t uncomp_data;
-    double t_fine;
+    int32_t t_fine;
 
     bool read_chip_id();
     void get_calib();
