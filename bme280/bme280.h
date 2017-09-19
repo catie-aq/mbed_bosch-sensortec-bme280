@@ -23,8 +23,8 @@ namespace sixtron {
 
 typedef struct {
     float humidity;
-    double pressure;
-    double temperature;
+    float pressure;
+    float temperature;
 } bme280_environment_t;
 
 typedef struct {
@@ -153,24 +153,108 @@ public:
         MS_20               = 0b111
     };
 
+
+    /*!
+     *  @brief Default BME280 contructor
+     *
+     *  @param i2c Instance of I2C
+     *  @param i2c_address I2C address of the device
+     *
+     */
     BME280(I2C* i2c, I2CAddress address = I2CAddress::Address1);
+
+    /*!
+     *  Initialize the device
+     *
+     *  @return true on success, false on failure
+     */
     bool initialize();
 
+
+    /*!
+     *  Puts the device to sleep mode
+     *
+     *  @return 0 on success, 1 on failure
+     */
     int sleep();
-    int resume();
+
+    /*!
+     *  Perform a reset of the device
+     *
+     *  @return 0 on success, 1 on failure
+     */
     int reset();
 
+    /*!
+     *  Computes humidity
+     *
+     *  @return humidity on success, NAN on on failure
+     */
     float humidity();
+
+    /*!
+     *  Computes pressure
+     *
+     *  @return pressure on success, NAN on failure
+     */
     float pressure();
+
+    /*!
+     *  Computes temperature
+     *
+     *  @return temperature on success, NAN on failure
+     */
     float temperature();
 
-    int read_env_data(bme280_environment_t* env);
+    /*!
+     *  Read sensor environmental parameters
+     *
+     *  @param env Structure to fill with data on success or nan values on failure
+     */
+    void read_env_data(bme280_environment_t &env);
 
+
+    /*!
+     *  Takes a new measurement (only possible in forced mode)
+     */
     void take_forced_measurement();
 
+    /*!
+     *  Set the device power mode
+     *
+     *  @param mode Chosen power mode
+     *  value  | power mode
+     *  ------------------
+     *    0b00 | SLEEP
+     *    0b01 | FORCED
+     *    0b10 | NORMAL
+     *  @return 0 on success, 1 on failure
+     */
     int set_power_mode(SensorMode mode);
+
+    /*!
+     *  Get the device power mode
+     *
+     *  @param mode Pointer to the value of power mode
+     *  value | power mode
+     *  ------------------
+     *    0   | SLEEP
+     *    1   | FORCED
+     *    2   | NORMAL
+     *  @return 0 on success, 1 on failure
+     */
     int get_power_mode(SensorMode* mode);
 
+    /*!
+     *  Set sampling settings
+     *
+     *  @param mode Sensor mode to set
+     *  @param temp_sampling Temperature sampling to set
+     *  @param press_sampling Pressure sampling to set
+     *  @param humid_sampling Humidity sampling to set
+     *  @param filter Filter setting to set
+     *  @param duration Stand-by duration
+     */
     void set_sampling(SensorMode mode = SensorMode::NORMAL,
         SensorSampling temp_sampling = SensorSampling::OVERSAMPLING_X16,
         SensorSampling press_sampling = SensorSampling::OVERSAMPLING_X16,
@@ -178,9 +262,18 @@ public:
         SensorFilter filter = SensorFilter::OFF, StandbyDuration duration =
             StandbyDuration::MS_0_5);
 
+    /*!
+     * @return Chip ID
+     */
     char chip_id() {
         return _chip_id;
     }
+
+    /*!
+     *  Get current bme280 settings
+     *
+     *  @return sensor settings
+     */
     bme280_settings_t get_settings() {
         return settings;
     }
@@ -195,14 +288,84 @@ private:
     bme280_raw_data_t uncomp_data;
     int32_t t_fine;
 
+    /*!
+     *  Private function to check chip ID correctness
+     *
+     *  @return true on success, false on failure
+     */
     bool read_chip_id();
+
+    /*!
+     *  Read and store calibration data
+     */
     void get_calib();
+
+    /*!
+     *  Parse raw data: pressure, humidity and temperature, then store it to
+     *  uncomp_data attribute
+     */
     void get_raw_data();
+
     int write_power_mode(SensorMode mode);
+
+    /*!
+     * Read register data
+     *
+     * @param register_address Address of the register
+     * @param value Pointer to the value read from the register
+     * @return 0 on success, 1 on failure
+     */
     int i2c_read_register(RegisterAddress register_address, int8_t* value);
+
+    /*!
+     * Read two successive registers data
+     *
+     * @note This function is useful to read memory-contiguous LSB/MSB registers
+     *
+     * @param register_address Address of the first register
+     * @param value Array to store read data
+     *
+     * @return 0 on success, 1 on failure
+     */
     int i2c_read_two_bytes(RegisterAddress register_address, int8_t value[2]);
+
+    /*!
+     * @brief Read three successive registers data
+     *
+     * @note This function is useful to read memory-contiguous LSB/MSB/XLSB registers
+     *
+     * @param register_address Address of the first register
+     * @param value Array to store the read data
+     *
+     * @return
+     *         0 on success,
+     *         1 on failure
+     */
     int i2c_read_three_bytes(RegisterAddress register_address, int8_t value[3]);
+
+    /*!
+     * @brief Read a 16 bits signed vector (3 dimensions) continuous read
+     *
+     * @param register_address Address of the register containing the LSB
+     *                        of the first axis
+     *        value Array to store the read values
+     *
+     * @return
+     *         0 on success,
+     *         1 on failure
+     */
     int i2c_read_vector(RegisterAddress register_address, int16_t value[3]);
+
+    /*!
+     * @brief Write to a register
+     *
+     * @param register_address Address of the register to write to
+     * @param value Data to store in the register
+     *
+     * @return
+     *         0 on success,
+     *         1 on failure
+     */
     int i2c_write_register(RegisterAddress register_address, int8_t value);
 };
 
