@@ -263,7 +263,7 @@ public:
             StandbyDuration::MS_0_5);
 
     /*!
-     * @return Chip ID
+     *  @return Chip ID
      */
     char chip_id() {
         return _chip_id;
@@ -306,6 +306,11 @@ private:
      */
     void get_raw_data();
 
+    /*! Set power mode
+     *
+     *  @param mode Power mode
+     *  @return 0 on success, 1 on failure
+     */
     int write_power_mode(SensorMode mode);
 
     /*!
