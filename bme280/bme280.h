@@ -154,7 +154,7 @@ public:
     };
 
 
-    /*!
+    /**
      *  @brief Default BME280 contructor
      *
      *  @param i2c Instance of I2C
@@ -163,7 +163,7 @@ public:
      */
     BME280(I2C* i2c, I2CAddress address = I2CAddress::Address1);
 
-    /*!
+    /**
      *  Initialize the device
      *
      *  @return true on success, false on failure
@@ -171,42 +171,42 @@ public:
     bool initialize();
 
 
-    /*!
+    /**
      *  Puts the device to sleep mode
      *
      *  @return 0 on success, 1 on failure
      */
     int sleep();
 
-    /*!
+    /**
      *  Perform a reset of the device
      *
      *  @return 0 on success, 1 on failure
      */
     int reset();
 
-    /*!
+    /**
      *  Computes humidity
      *
      *  @return humidity on success, NAN on on failure
      */
     float humidity();
 
-    /*!
+    /**
      *  Computes pressure
      *
      *  @return pressure on success, NAN on failure
      */
     float pressure();
 
-    /*!
+    /**
      *  Computes temperature
      *
      *  @return temperature on success, NAN on failure
      */
     float temperature();
 
-    /*!
+    /**
      *  Read sensor environmental parameters
      *
      *  @param env Structure to fill with data on success or nan values on failure
@@ -214,12 +214,12 @@ public:
     void read_env_data(bme280_environment_t &env);
 
 
-    /*!
+    /**
      *  Takes a new measurement (only possible in forced mode)
      */
     void take_forced_measurement();
 
-    /*!
+    /**
      *  Set the device power mode
      *
      *  @param mode Chosen power mode
@@ -232,7 +232,7 @@ public:
      */
     int set_power_mode(SensorMode mode);
 
-    /*!
+    /**
      *  Get the device power mode
      *
      *  @param mode Pointer to the value of power mode
@@ -245,7 +245,7 @@ public:
      */
     int get_power_mode(SensorMode* mode);
 
-    /*!
+    /**
      *  Set sampling settings
      *
      *  @param mode Sensor mode to set
@@ -262,14 +262,14 @@ public:
         SensorFilter filter = SensorFilter::OFF, StandbyDuration duration =
             StandbyDuration::MS_0_5);
 
-    /*!
+    /**
      *  @return Chip ID
      */
     char chip_id() {
         return _chip_id;
     }
 
-    /*!
+    /**
      *  Get current bme280 settings
      *
      *  @return sensor settings
@@ -288,7 +288,7 @@ private:
     bme280_raw_data_t uncomp_data;
     int32_t t_fine;
 
-    /*!
+    /**
      *  Private function to check chip ID correctness
      *
      *  @return true on success, false on failure
