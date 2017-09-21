@@ -28,24 +28,24 @@ typedef struct {
 } bme280_environment_t;
 
 typedef struct {
-    /*! humidity oversampling setting */
+    /** humidity oversampling setting */
     uint8_t osrs_h;
-    /*! pressure oversampling setting */
+    /** pressure oversampling setting */
     uint8_t osrs_p;
-    /*! temperature oversampling setting */
+    /** temperature oversampling setting */
     uint8_t osrs_t;
-    /*! filter coefficient */
+    /** filter coefficient */
     uint8_t filter;
-    /*! standby time */
+    /** standby time */
     uint8_t standby_time;
 } bme280_settings_t;
 
 typedef struct {
-    /*! uncompensated humidity */
+    /** uncompensated humidity */
     int32_t humidity;
-    /*! uncompensated pressure */
+    /** uncompensated pressure */
     uint32_t pressure;
-    /*! uncompensated temperature */
+    /** uncompensated temperature */
     int32_t temperature;
 } bme280_raw_data_t;
 
