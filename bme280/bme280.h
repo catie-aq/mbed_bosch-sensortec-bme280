@@ -72,6 +72,10 @@ typedef struct {
     int8_t dig_H6;
 } bme280_calib_data_t;
 
+/**
+ *  @class BME280
+ *  BME280 sensor driver
+ */
 class BME280 {
 public:
     /* I2C addresses */
