@@ -163,7 +163,6 @@ public:
      *
      *  \param i2c Instance of I2C
      *  \param i2c_address I2C address of the device
-     *
      */
     BME280(I2C* i2c, I2CAddress address = I2CAddress::Address1);
 
