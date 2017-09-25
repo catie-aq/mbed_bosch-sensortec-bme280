@@ -191,7 +191,7 @@ public:
     /*!
      *  Compute humidity
      *
-     *  \return humidity on success, NAN on on failure
+     *  \return humidity on success, NAN on failure
      */
     float humidity();
 
@@ -218,7 +218,9 @@ public:
 
 
     /*!
-     *  Take a new measurement (only possible in forced mode)
+     * Take a new measurement.
+     *
+     * \attention Only available in \cSensorMode::FORCED mode.
      */
     void take_forced_measurement();
 
@@ -258,15 +260,10 @@ public:
     /*!
      *  \return Chip ID
      */
-    char chip_id() {
+    char get_chip_id() {
         return _chip_id;
     }
 
-    /*!
-     *  Get current bme280 settings
-     *
-     *  \return sensor settings
-     */
     bme280_settings_t get_settings() {
         return settings;
     }
