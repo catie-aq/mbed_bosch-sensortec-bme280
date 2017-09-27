@@ -65,7 +65,7 @@ namespace {
 
 #define SOFTRESET_CMD                      0xB6
 
-#define CHIP                            0x60
+#define CHIP                               0x60
 
 }
 
