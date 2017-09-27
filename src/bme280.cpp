@@ -65,7 +65,7 @@ namespace {
 
 #define SOFTRESET_CMD                      0xB6
 
-#define CHIP_ID                            0x60
+#define CHIP                            0x60
 
 }
 
@@ -80,8 +80,8 @@ bool BME280::initialize() {
     if (!read_chip_id())
         return false;
     else {
-        printf("Chip ID: 0x%X\n", CHIP_ID);
-        _chip_id = CHIP_ID;
+        printf("Chip ID: 0x%X\n", CHIP);
+        _chip_id = CHIP;
     }
     if (reset() != SUCCESS)
         return false;
@@ -279,10 +279,10 @@ bool BME280::read_chip_id(){
     int8_t chip_id = INIT_VALUE;
     if (i2c_read_register(RegisterAddress::CHIP_ID, &chip_id) != SUCCESS)
         return FAILURE;
-    if (chip_id != CHIP_ID){
+    if (chip_id != CHIP){
         wait_ms(1000);
         i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
-        return (chip_id != CHIP_ID) ? false : true;
+        return (chip_id != CHIP) ? false : true;
     }
     return true;
 }
