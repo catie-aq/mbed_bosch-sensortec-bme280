@@ -18,6 +18,9 @@
 #include "bme280.h"
 
 namespace sixtron {
+    
+namespace {
+
 #define SET_BITS_POS_0(reg_data, bitname, data) \
     ((reg_data & ~(bitname##__MSK)) |\
      (data & bitname##__MSK))
@@ -63,6 +66,8 @@ namespace sixtron {
 #define SOFTRESET_CMD                      0xB6
 
 #define CHIP_ID                            0x60
+
+}
 
 BME280::BME280(I2C* i2c, I2CAddress i2c_address) :
     _i2c(i2c), _i2c_address(i2c_address) {
