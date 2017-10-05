@@ -18,6 +18,9 @@
 #include "bme280.h"
 
 namespace sixtron {
+    
+namespace {
+
 #define SET_BITS_POS_0(reg_data, bitname, data) \
     ((reg_data & ~(bitname##__MSK)) |\
      (data & bitname##__MSK))
@@ -62,6 +65,10 @@ namespace sixtron {
 
 #define SOFTRESET_CMD                      0xB6
 
+#define CHIP                               0x60
+
+}
+
 BME280::BME280(I2C* i2c, I2CAddress i2c_address) :
     _i2c(i2c), _i2c_address(i2c_address) {
     _sensor_mode = SensorMode::NORMAL;
@@ -73,10 +80,9 @@ bool BME280::initialize() {
     if (!read_chip_id())
         return false;
     else {
-        printf("Chip ID: 0x%X\n", 0x60);
-        _chip_id = 0x60;
+        printf("Chip ID: 0x%X\n", CHIP);
+        _chip_id = CHIP;
     }
-
     if (reset() != SUCCESS)
         return false;
 
@@ -269,14 +275,14 @@ void BME280::set_sampling(SensorMode mode, SensorSampling temp_sampling,
         return;
 }
 
-bool BME280::read_chip_id() {
+bool BME280::read_chip_id(){
     int8_t chip_id = INIT_VALUE;
     if (i2c_read_register(RegisterAddress::CHIP_ID, &chip_id) != SUCCESS)
         return FAILURE;
-    if (chip_id != 0x60) {
+    if (chip_id != CHIP){
         wait_ms(1000);
         i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
-        return (chip_id != 0x60) ? false : true;
+        return (chip_id != CHIP) ? false : true;
     }
     return true;
 }
