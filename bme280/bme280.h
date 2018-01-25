@@ -1,13 +1,13 @@
 /*
  * Copyright (c) 2017, CATIE, All Rights Reserved
  * SPDX-License-Identifier: Apache-2.0
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -76,7 +76,8 @@ typedef struct {
  *  \class BME280
  *  BME280 sensor driver
  */
-class BME280 {
+class BME280
+{
 public:
     /* I2C addresses */
     enum class I2CAddress : char {
@@ -164,7 +165,7 @@ public:
      *  \param i2c Instance of I2C
      *  \param i2c_address I2C address of the device
      */
-    BME280(I2C* i2c, I2CAddress address = I2CAddress::Address1);
+    BME280(I2C *i2c, I2CAddress address = I2CAddress::Address1);
 
     /*!
      *  Initialize the device
@@ -238,7 +239,7 @@ public:
      *  \param mode Pointer to the value of power mode
      *  \return 0 on success, 1 on failure
      */
-    int get_power_mode(SensorMode* mode);
+    int get_power_mode(SensorMode *mode);
 
     /*!
      *  Set sampling settings
@@ -251,26 +252,28 @@ public:
      *  \param duration Stand-by duration
      */
     void set_sampling(SensorMode mode = SensorMode::NORMAL,
-        SensorSampling temp_sampling = SensorSampling::OVERSAMPLING_X16,
-        SensorSampling press_sampling = SensorSampling::OVERSAMPLING_X16,
-        SensorSampling humid_sampling = SensorSampling::OVERSAMPLING_X16,
-        SensorFilter filter = SensorFilter::OFF, StandbyDuration duration =
-            StandbyDuration::MS_0_5);
+            SensorSampling temp_sampling = SensorSampling::OVERSAMPLING_X16,
+            SensorSampling press_sampling = SensorSampling::OVERSAMPLING_X16,
+            SensorSampling humid_sampling = SensorSampling::OVERSAMPLING_X16,
+            SensorFilter filter = SensorFilter::OFF, StandbyDuration duration =
+                    StandbyDuration::MS_0_5);
 
     /*!
      *  \return Chip ID
      */
-    char get_chip_id() {
+    char get_chip_id()
+    {
         return _chip_id;
     }
 
-    bme280_settings_t get_settings() {
+    bme280_settings_t get_settings()
+    {
         return settings;
     }
 
 private:
     char _chip_id = 0;
-    I2C* _i2c;
+    I2C *_i2c;
     I2CAddress _i2c_address;
     SensorMode _sensor_mode;
     bme280_settings_t settings;
@@ -310,7 +313,7 @@ private:
      *  \param value Pointer to the value read from the register
      *  \return 0 on success, 1 on failure
      */
-    int i2c_read_register(RegisterAddress register_address, int8_t* value);
+    int i2c_read_register(RegisterAddress register_address, int8_t *value);
 
     /*!
      *  Read two successive registers data
