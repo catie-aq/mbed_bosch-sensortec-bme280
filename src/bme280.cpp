@@ -78,11 +78,9 @@ BME280::BME280(I2C *i2c, I2CAddress i2c_address) :
 
 bool BME280::initialize()
 {
-    printf("\nInitializing the BME280...\n");
     if (!read_chip_id()) {
         return false;
     } else {
-        printf("Chip ID: 0x%X\n", CHIP);
         _chip_id = CHIP;
     }
     if (reset() != SUCCESS) {
@@ -126,7 +124,7 @@ float BME280::humidity()
 
     var1 = (var1 < HUMIDITY_MIN) ? HUMIDITY_MIN : var1;
     var1 = (var1 > HUMIDITY_MAX) ? HUMIDITY_MAX : var1;
-    return static_cast<float>(var1 >> 12) / 1024;
+    return static_cast<float>((var1 >> 12) / 1024);
 }
 
 float BME280::pressure()
@@ -161,12 +159,14 @@ float BME280::pressure()
     pressure = ((pressure + var1 + var2) >> 8)
             + (((int64_t) calib.dig_P7) << 4);
 
-    return (float) pressure / 256;
+    return static_cast<float>(pressure / 256);
 }
 
 float BME280::temperature()
 {
     int32_t var1, var2;
+    float temperature_value = 0.0;
+
     get_raw_data();
 
     if (uncomp_data.temperature == 0x80000) { // value in case temp measurement was disabled
@@ -182,8 +182,8 @@ float BME280::temperature()
 
     t_fine = var1 + var2;
 
-    float T = (t_fine * 5 + 128) >> 8;
-    return T / 100;
+    temperature_value = (t_fine * 5 + 128) >> 8;
+    return (temperature_value / 100);
 }
 
 void BME280::read_env_data(bme280_environment_t &env)
@@ -197,29 +197,29 @@ void BME280::read_env_data(bme280_environment_t &env)
 int BME280::write_power_mode(SensorMode mode)
 {
     int8_t sensor_mode;
-    if (i2c_read_register(RegisterAddress::CONTROL_MEAS,
-                    &sensor_mode) != SUCCESS) {
+
+    if (i2c_read_register(RegisterAddress::CONTROL_MEAS, &sensor_mode) != SUCCESS) {
         return FAILURE;
     }
-    sensor_mode = SET_BITS_POS_0(sensor_mode, SENSOR_MODE,
-                    static_cast<int8_t>(mode));
-    if (i2c_write_register(RegisterAddress::CONTROL_MEAS,
-                    sensor_mode) != SUCCESS) {
+    sensor_mode = SET_BITS_POS_0(sensor_mode, SENSOR_MODE, static_cast<int8_t>(mode));
+
+    if (i2c_write_register(RegisterAddress::CONTROL_MEAS, sensor_mode) != SUCCESS) {
         return FAILURE;
     }
+
     return SUCCESS;
 }
 
 int BME280::sleep()
 {
     static char data[4];
+
     data[0] = static_cast<char>(RegisterAddress::CONTROL_HUMID);
-    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1,
-                    true) != SUCCESS) {
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS) {
         return FAILURE;
     }
-    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 4,
-                    false) != SUCCESS) {
+
+    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 4, false) != SUCCESS) {
         return FAILURE;
     }
     return reset();
@@ -390,6 +390,7 @@ void BME280::get_raw_data()
 int BME280::i2c_read_register(RegisterAddress register_address, int8_t *value)
 {
     static char data;
+
     data = static_cast<char>(register_address);
     if (_i2c->write(static_cast<int>(_i2c_address) << 1, &data, 1,
                     true) != SUCCESS) {
@@ -400,6 +401,7 @@ int BME280::i2c_read_register(RegisterAddress register_address, int8_t *value)
                     1) != SUCCESS) {
         return FAILURE;
     }
+
     return SUCCESS;
 }
 
