@@ -173,8 +173,6 @@ float BME280::temperature()
         return NAN;
     }
 
-    //uncomp_data.temperature >>= 4;
-
     var1 = ((((uncomp_data.temperature >> 3) - ((int32_t) calib.dig_T1 << 1)))
                     * ((int32_t) calib.dig_T2)) >> 11;
 
