@@ -72,36 +72,34 @@ namespace {
 BME280::BME280(I2C *i2c, I2CAddress i2c_address) :
     _i2c(i2c), _i2c_address(i2c_address)
 {
-    _sensor_mode = SensorMode::NORMAL;
-    t_fine = 0;
+    _sensor_mode = SensorMode::SLEEP;
+    _t_fine = 0;
 }
 
 bool BME280::initialize()
 {
-    if (!read_chip_id()) {
-        return false;
-    } else {
-        _chip_id = CHIP;
+    // get chip id
+    if (chip_id() != CHIP) {
+        // start up time (cf p.7 of data sheet)
+        wait_ms(2);
+        // new attempt
+        if (chip_id() != CHIP) {
+            return false;
+        }
     }
-    if (reset() != SUCCESS) {
-        return false;
-    }
-
-    // wait for chip to wake up
-    wait_ms(1);
-
-    get_calib();
+    // soft reset
+    reset();
+    // get calibration values
+    calibration();
 
     return true;
 }
 
-int BME280::reset()
+void BME280::reset()
 {
-    if (i2c_write_register(RegisterAddress::RESET, SOFTRESET_CMD) != SUCCESS) {
-        return FAILURE;
-    }
+    i2c_write_register(RegisterAddress::RESET, SOFTRESET_CMD);
+    // start up time
     wait_ms(2);
-    return SUCCESS;
 }
 
 float BME280::humidity()
@@ -110,17 +108,15 @@ float BME280::humidity()
         return NAN;
     }
 
-    int32_t var1 = t_fine - 76800;
-    var1 = (((((uncomp_data.humidity << 14) - (((int32_t) calib.dig_H4) << 20)
-                                            - (((int32_t) calib.dig_H5) * var1)) + ((int32_t) 16384)) >> 15)
-                    * (((((((var1 * ((int32_t) calib.dig_H6)) >> 10)
-                                    * (((var1 * ((int32_t) calib.dig_H3)) >> 11) + ((int32_t) 32768)))
-                            >> 10) + ((int32_t) 2097152)) * ((int32_t) calib.dig_H2) + 8192)
+    int32_t var1 = _t_fine - 76800;
+    var1 = (((((_uncomp_data.humidity << 14) - (((int32_t) _calibration_data.dig_H4) << 20)
+                                            - (((int32_t) _calibration_data.dig_H5) * var1)) + ((int32_t) 16384)) >> 15)
+                    * (((((((var1 * ((int32_t) _calibration_data.dig_H6)) >> 10)
+                                    * (((var1 * ((int32_t) _calibration_data.dig_H3)) >> 11) + ((int32_t) 32768)))
+                            >> 10) + ((int32_t) 2097152)) * ((int32_t) _calibration_data.dig_H2) + 8192)
                             >> 14));
 
-    var1 = (var1
-                    - (((((var1 >> 15) * (var1 >> 15)) >> 7) * ((int32_t) calib.dig_H1))
-                            >> 4));
+    var1 = (var1 - (((((var1 >> 15) * (var1 >> 15)) >> 7) * ((int32_t) _calibration_data.dig_H1)) >> 4));
 
     var1 = (var1 < HUMIDITY_MIN) ? HUMIDITY_MIN : var1;
     var1 = (var1 > HUMIDITY_MAX) ? HUMIDITY_MAX : var1;
@@ -134,30 +130,30 @@ float BME280::pressure()
         return NAN;
     }
 
-    if (uncomp_data.pressure == 0x80000) { // value in case pressure measurement was disabled
+    if (_uncomp_data.pressure == 0x80000) { // value in case pressure measurement was disabled
         return NAN;
     }
 
-    var1 = ((int64_t) t_fine) - 128000;
-    var2 = var1 * var1 * (int64_t) calib.dig_P6;
-    var2 = var2 + ((var1 * (int64_t) calib.dig_P5) << 17);
-    var2 = var2 + (((int64_t) calib.dig_P4) << 35);
-    var1 = ((var1 * var1 * (int64_t) calib.dig_P3) >> 8)
-            + ((var1 * (int64_t) calib.dig_P2) << 12);
-    var1 = (((((int64_t) 1) << 47) + var1)) * ((int64_t) calib.dig_P1) >> 33;
+    var1 = ((int64_t) _t_fine) - 128000;
+    var2 = var1 * var1 * (int64_t) _calibration_data.dig_P6;
+    var2 = var2 + ((var1 * (int64_t) _calibration_data.dig_P5) << 17);
+    var2 = var2 + (((int64_t) _calibration_data.dig_P4) << 35);
+    var1 = ((var1 * var1 * (int64_t) _calibration_data.dig_P3) >> 8)
+            + ((var1 * (int64_t) _calibration_data.dig_P2) << 12);
+    var1 = (((((int64_t) 1) << 47) + var1)) * ((int64_t) _calibration_data.dig_P1) >> 33;
 
     if (!var1) {
         return FAILURE; // avoid exception caused by division by zero
     }
 
-    pressure = 1048576 - uncomp_data.pressure;
+    pressure = 1048576 - _uncomp_data.pressure;
     pressure = (((pressure << 31) - var2) * 3125) / var1;
-    var1 = (((int64_t) calib.dig_P9) * (pressure >> 13) * (pressure >> 13))
+    var1 = (((int64_t) _calibration_data.dig_P9) * (pressure >> 13) * (pressure >> 13))
             >> 25;
-    var2 = (((int64_t) calib.dig_P8) * pressure) >> 19;
+    var2 = (((int64_t) _calibration_data.dig_P8) * pressure) >> 19;
 
     pressure = ((pressure + var1 + var2) >> 8)
-            + (((int64_t) calib.dig_P7) << 4);
+            + (((int64_t) _calibration_data.dig_P7) << 4);
 
     return static_cast<float>(pressure / 256);
 }
@@ -167,70 +163,43 @@ float BME280::temperature()
     int32_t var1, var2;
     float temperature_value = 0.0;
 
-    get_raw_data();
+    raw_data();
 
-    if (uncomp_data.temperature == 0x80000) { // value in case temp measurement was disabled
+    if (_uncomp_data.temperature == 0x80000) { // value in case temp measurement was disabled
         return NAN;
     }
 
-    var1 = ((((uncomp_data.temperature >> 3) - ((int32_t) calib.dig_T1 << 1)))
-                    * ((int32_t) calib.dig_T2)) >> 11;
+    var1 = ((((_uncomp_data.temperature >> 3) - ((int32_t) _calibration_data.dig_T1 << 1)))
+                    * ((int32_t) _calibration_data.dig_T2)) >> 11;
 
-    var2 = (((((uncomp_data.temperature >> 4) - ((int32_t) calib.dig_T1))
-                                    * ((uncomp_data.temperature >> 4) - ((int32_t) calib.dig_T1))) >> 12)
-                    * ((int32_t) calib.dig_T3)) >> 14;
+    var2 = (((((_uncomp_data.temperature >> 4) - ((int32_t) _calibration_data.dig_T1))
+                                    * ((_uncomp_data.temperature >> 4) - ((int32_t) _calibration_data.dig_T1))) >> 12)
+                    * ((int32_t) _calibration_data.dig_T3)) >> 14;
 
-    t_fine = var1 + var2;
+    _t_fine = var1 + var2;
 
-    temperature_value = (t_fine * 5 + 128) >> 8;
+    temperature_value = ((_t_fine * 5 + 128) >> 8);
+
     return (temperature_value / 100);
 }
 
-void BME280::read_env_data(bme280_environment_t &env)
+bme280_environment_t BME280::environment_data()
 {
-    env.temperature = temperature();
-    env.pressure = pressure();
-    env.humidity = humidity();
-    return;
-}
+    bme280_environment_t environment_values;
 
-int BME280::write_power_mode(SensorMode mode)
-{
-    int8_t sensor_mode;
+    environment_values.temperature = temperature();
+    environment_values.pressure = pressure();
+    environment_values.humidity = humidity();
 
-    if (i2c_read_register(RegisterAddress::CONTROL_MEAS, &sensor_mode) != SUCCESS) {
-        return FAILURE;
-    }
-    sensor_mode = SET_BITS_POS_0(sensor_mode, SENSOR_MODE, static_cast<int8_t>(mode));
-
-    if (i2c_write_register(RegisterAddress::CONTROL_MEAS, sensor_mode) != SUCCESS) {
-        return FAILURE;
-    }
-
-    return SUCCESS;
-}
-
-int BME280::sleep()
-{
-    static char data[4];
-
-    data[0] = static_cast<char>(RegisterAddress::CONTROL_HUMID);
-    if (_i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true) != SUCCESS) {
-        return FAILURE;
-    }
-
-    if (_i2c->read(static_cast<int>(_i2c_address) << 1, data, 4, false) != SUCCESS) {
-        return FAILURE;
-    }
-    return reset();
+    return environment_values;
 }
 
 void BME280::take_forced_measurement()
 {
     if (_sensor_mode == SensorMode::FORCED) {
         if (i2c_write_register(RegisterAddress::CONTROL_MEAS,
-                        static_cast<int8_t>((settings.osrs_t << OSRS_T__POS)
-                                | (settings.osrs_p << OSRS_P__POS)
+                        static_cast<int8_t>((_settings.osrs_t << OSRS_T__POS)
+                                | (_settings.osrs_p << OSRS_P__POS)
                                 | static_cast<char>(_sensor_mode))) != SUCCESS) {
             return;
         }
@@ -247,56 +216,54 @@ void BME280::take_forced_measurement()
     }
 }
 
-int BME280::set_power_mode(SensorMode mode)
+void BME280::set_sensor_mode(SensorMode mode)
 {
-    SensorMode last_set_mode;
-    if (get_power_mode(&last_set_mode) != SUCCESS) {
-        return FAILURE;
-    }
-    if (last_set_mode != SensorMode::SLEEP) {
-        if (sleep() != SUCCESS) {
-            return FAILURE;
-        }
-        write_power_mode(mode);
-        return SUCCESS;
-    }
-    return FAILURE;
+    int8_t register_value;
+
+    // read current value
+    i2c_read_register(RegisterAddress::CONTROL_MEAS, &register_value);
+
+    // clear bit sensor mode and format new value
+    register_value &= 0xFC;
+    register_value |= static_cast<int8_t>(mode);
+
+    // set new sensor mode value
+    i2c_write_register(RegisterAddress::CONTROL_MEAS, register_value);
+
+    // set new sensor mode value to the member of class
+    _sensor_mode = mode;
 }
 
-int BME280::get_power_mode(SensorMode *mode)
+BME280::SensorMode BME280::sensor_mode()
 {
-    if (mode) {
-        *mode = _sensor_mode;
-        return SUCCESS;
-    }
-    return FAILURE;
+    return _sensor_mode;
 }
 
 void BME280::set_sampling(SensorMode mode, SensorSampling temp_sampling,
         SensorSampling press_sampling, SensorSampling humid_sampling,
         SensorFilter filter, StandbyDuration duration)
 {
-    _sensor_mode = mode;
-    settings.osrs_t = static_cast<uint8_t>(temp_sampling);
-    settings.osrs_h = static_cast<uint8_t>(humid_sampling);
-    settings.osrs_p = static_cast<uint8_t>(press_sampling);
-    settings.filter = static_cast<uint8_t>(filter);
-    settings.standby_time = static_cast<uint8_t>(duration);
+    _settings.osrs_t = static_cast<uint8_t>(temp_sampling);
+    _settings.osrs_h = static_cast<uint8_t>(humid_sampling);
+    _settings.osrs_p = static_cast<uint8_t>(press_sampling);
+    _settings.filter = static_cast<uint8_t>(filter);
+    _settings.standby_time = static_cast<uint8_t>(duration);
 
     if (i2c_write_register(RegisterAddress::CONTROL_HUMID,
-                    static_cast<int8_t>(settings.osrs_h)) != SUCCESS) {
+                    static_cast<int8_t>(_settings.osrs_h)) != SUCCESS) {
         return;
     }
 
     if (i2c_write_register(RegisterAddress::CONTROL_MEAS,
-                    static_cast<int8_t>((settings.osrs_t << OSRS_T__POS)
-                            | (settings.osrs_p << OSRS_P__POS) | static_cast<char>(mode))) != SUCCESS) {
+                    static_cast<int8_t>((_settings.osrs_t << OSRS_T__POS)
+                            | (_settings.osrs_p << OSRS_P__POS) | static_cast<char>(mode))) != SUCCESS) {
         return;
     }
+    _sensor_mode = mode;
 
     if (i2c_write_register(RegisterAddress::CONFIG,
-                    static_cast<int8_t>((settings.standby_time << STANDBY__POS)
-                            | (settings.filter << FILTER__POS) | 0)) != SUCCESS) {
+                    static_cast<int8_t>((_settings.standby_time << STANDBY__POS)
+                            | (_settings.filter << FILTER__POS) | 0)) != SUCCESS) {
         return;
     }
 }
@@ -315,54 +282,62 @@ bool BME280::read_chip_id()
     return true;
 }
 
-void BME280::get_calib()
+int8_t BME280::chip_id()
+{
+    i2c_read_register(RegisterAddress::CHIP_ID, &_chip_id);
+
+    return _chip_id;
+}
+
+bme280_settings_t BME280::settings()
+   {
+       return _settings;
+   }
+
+void BME280::calibration()
 {
     int8_t s8_dig_1, s8_dig_2;
     int8_t s8_dig[2];
+    static char data[18];
 
     /* Temperature-related coefficients */
-    static char data[18];
-    data[0] = static_cast<char>(RegisterAddress::DIG_T1);
-    _i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true);
-    _i2c->read(static_cast<int>(_i2c_address) << 1, data, 6, false);
-    calib.dig_T1 = static_cast<uint16_t>((data[1] << 8) | (data[0]));
-    calib.dig_T2 = (data[3] << 8) | (data[2]);
-    calib.dig_T3 = (data[5] << 8) | (data[4]);
+    i2c_read_multiple_bytes(RegisterAddress::DIG_T1, 6, data);
+    _calibration_data.dig_T1 = static_cast<uint16_t>((data[1] << 8) | (data[0]));
+    _calibration_data.dig_T2 = (data[3] << 8) | (data[2]);
+    _calibration_data.dig_T3 = (data[5] << 8) | (data[4]);
 
     /* Pressure-related coefficients */
-    data[0] = static_cast<char>(RegisterAddress::DIG_P1);
-    _i2c->write(static_cast<int>(_i2c_address) << 1, data, 1, true);
-    _i2c->read(static_cast<int>(_i2c_address) << 1, data, 18, false);
-    calib.dig_P1 = (data[1] << 8) | data[0];
-    calib.dig_P2 = (data[3] << 8) | data[2];
-    calib.dig_P3 = (data[5] << 8) | data[4];
-    calib.dig_P4 = (data[7] << 8) | data[6];
-    calib.dig_P5 = (data[9] << 8) | data[8];
-    calib.dig_P6 = (data[11] << 8) | data[10];
-    calib.dig_P7 = (data[13] << 8) | data[12];
-    calib.dig_P8 = (data[15] << 8) | data[14];
-    calib.dig_P9 = (data[17] << 8) | data[16];
+    i2c_read_multiple_bytes(RegisterAddress::DIG_P1, 18, data);
+    _calibration_data.dig_P1 = (data[1] << 8) | data[0];
+    _calibration_data.dig_P2 = (data[3] << 8) | data[2];
+    _calibration_data.dig_P3 = (data[5] << 8) | data[4];
+    _calibration_data.dig_P4 = (data[7] << 8) | data[6];
+    _calibration_data.dig_P5 = (data[9] << 8) | data[8];
+    _calibration_data.dig_P6 = (data[11] << 8) | data[10];
+    _calibration_data.dig_P7 = (data[13] << 8) | data[12];
+    _calibration_data.dig_P8 = (data[15] << 8) | data[14];
+    _calibration_data.dig_P9 = (data[17] << 8) | data[16];
 
     /* Humidity-related coefficients */
     i2c_read_register(RegisterAddress::DIG_H1, &s8_dig_1);
-    calib.dig_H1 = static_cast<uint8_t>(s8_dig_1);
+    _calibration_data.dig_H1 = static_cast<uint8_t>(s8_dig_1);
     i2c_read_two_bytes(RegisterAddress::DIG_H2, s8_dig);
-    calib.dig_H2 = (s8_dig[1] << 8 | s8_dig[0]);
+    _calibration_data.dig_H2 = (s8_dig[1] << 8 | s8_dig[0]);
     i2c_read_register(RegisterAddress::DIG_H3, &s8_dig_1);
-    calib.dig_H3 = static_cast<uint8_t>(s8_dig_1);
+    _calibration_data.dig_H3 = static_cast<uint8_t>(s8_dig_1);
     i2c_read_two_bytes(RegisterAddress::DIG_H4, s8_dig);
-    calib.dig_H4 = (s8_dig[0] << 4 | (s8_dig[1] & 0xF));
+    _calibration_data.dig_H4 = (s8_dig[0] << 4 | (s8_dig[1] & 0xF));
     i2c_read_register(RegisterAddress::DIG_H5, &s8_dig_1);
     i2c_read_register(
             static_cast<RegisterAddress>(static_cast<char>(RegisterAddress::DIG_H5)
                     + 1), &s8_dig_2);
-    calib.dig_H5 = (s8_dig_2 << 4 | ((s8_dig_1 >> FOUR_BITS_SHIFT) & 0xF));
+    _calibration_data.dig_H5 = (s8_dig_2 << 4 | ((s8_dig_1 >> FOUR_BITS_SHIFT) & 0xF));
 
-    i2c_read_register(RegisterAddress::DIG_H6, &calib.dig_H6);
+    i2c_read_register(RegisterAddress::DIG_H6, &_calibration_data.dig_H6);
 
 }
 
-void BME280::get_raw_data()
+void BME280::raw_data()
 {
     char cmd;
     char data[8];
@@ -373,18 +348,15 @@ void BME280::get_raw_data()
     _i2c->read((static_cast<int>(_i2c_address)) << 1, data, 8);
 
     // raw_pressure = PRESS_MSB | PRESS_LSB | PRESS_XLSB[7:4]
-    uncomp_data.pressure = static_cast<uint32_t>((data[0] << 12)
-                    | (data[1] << 4) | (data[2] >> 4));
-    uncomp_data.pressure &= UNCOMPENSATED_PRESSURE_MSK;
+    _uncomp_data.pressure = static_cast<uint32_t>((data[0] << 12) | (data[1] << 4) | (data[2] >> 4));
+    _uncomp_data.pressure &= UNCOMPENSATED_PRESSURE_MSK;
 
     // raw_temperature = TEMP_MSB | TEMP_LSB | TEMP_XLSB[7:4]
-    uncomp_data.temperature =
-            ((data[3] << 12) | (data[4] << 4) | (data[5] >> 4));
-    uncomp_data.temperature &= UNCOMPENSATED_TEMPERATURE__MSK;
+    _uncomp_data.temperature = ((data[3] << 12) | (data[4] << 4) | (data[5] >> 4));
+    _uncomp_data.temperature &= UNCOMPENSATED_TEMPERATURE__MSK;
 
     // raw_humidity = HUMID_MSB | HUMID_LSB
-    uncomp_data.humidity = static_cast<int32_t>(data[6] << EIGHT_BITS_SHIFT
-                    | data[7]);
+    _uncomp_data.humidity = static_cast<int32_t>(data[6] << EIGHT_BITS_SHIFT | data[7]);
 }
 
 int BME280::i2c_read_register(RegisterAddress register_address, int8_t *value)
@@ -471,6 +443,22 @@ int BME280::i2c_write_register(RegisterAddress register_address, int8_t value)
         return FAILURE;
     }
     return SUCCESS;
+}
+
+int BME280::i2c_read_multiple_bytes(RegisterAddress register_address, size_t size, void *data)
+{
+    static char register_address_value;
+
+    register_address_value = static_cast<char>(register_address);
+
+    if (_i2c->write(static_cast<int>(_i2c_address) << 1, &register_address_value, 1, true) != SUCCESS) {
+            return FAILURE;
+    }
+    if (_i2c->read(static_cast<int>(_i2c_address) << 1, static_cast<char *>(data), size, false) != SUCCESS) {
+            return FAILURE;
+    }
+
+   return SUCCESS;
 }
 
 } // namespace sixtron

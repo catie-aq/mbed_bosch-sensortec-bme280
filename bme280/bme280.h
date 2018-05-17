@@ -159,90 +159,69 @@ public:
     };
 
 
-    /*!
-     *  Default BME280 contructor
+    /*! Default BME280 contructor
      *
      *  \param i2c Instance of I2C
      *  \param i2c_address I2C address of the device
      */
     BME280(I2C *i2c, I2CAddress address = I2CAddress::Address1);
 
-    /*!
-     *  Initialize the device
+    /*! Initialize the device
      *
-     *  \return true on success, false on failure
+     * \return true on success, false on failure
      */
     bool initialize();
 
-
-    /*!
-     *  Put the device to sleep mode
+    /*! Perform a reset of the device
      *
-     *  \return 0 on success, 1 on failure
+     * \return 0 on success, 1 on failure
      */
-    int sleep();
+    void reset();
 
-    /*!
-     *  Perform a reset of the device
+    /*! Compute humidity
      *
-     *  \return 0 on success, 1 on failure
-     */
-    int reset();
-
-    /*!
-     *  Compute humidity
-     *
-     *  \return humidity on success, NAN on failure
+     * \return humidity on success, NAN on failure
      */
     float humidity();
 
-    /*!
-     *  Compute pressure
+    /*! Compute pressure
      *
-     *  \return pressure on success, NAN on failure
+     * \return pressure on success, NAN on failure
      */
     float pressure();
 
-    /*!
-     *  Compute temperature
+    /*! Compute temperature
      *
-     *  \return temperature on success, NAN on failure
+     * \return temperature on success, NAN on failure
      */
     float temperature();
 
-    /*!
-     *  Read sensor environmental parameters
+    /*! Read sensor environmental parameters
      *
-     *  \param env Structure filled with data on success or nan values on failure
+     * \return environment Structure filled with data on success or nan values on failure
      */
-    void read_env_data(bme280_environment_t &env);
+    bme280_environment_t environment_data();
 
 
-    /*!
-     * Take a new measurement.
+    /*! Take a new measurement.
      *
-     * \attention Only available in \cSensorMode::FORCED mode.
+     * \warning Only available in \cSensorMode::FORCED mode.
      */
     void take_forced_measurement();
 
-    /*!
-     *  Set the device power mode
+    /*! Set the device sensor mode
      *
-     *  \param mode Chosen power mode
-     *  \return 0 on success, 1 on failure
+     * \param mode Chosen sensor mode
      */
-    int set_power_mode(SensorMode mode);
+    void set_sensor_mode(SensorMode mode);
 
-    /*!
-     *  Get the device power mode
+    /*! Get the device sensor mode
      *
-     *  \param mode Pointer to the value of power mode
-     *  \return 0 on success, 1 on failure
+     * \return the current sensor mode
      */
-    int get_power_mode(SensorMode *mode);
+    SensorMode sensor_mode();
 
-    /*!
-     *  Set sampling settings
+    /*! Set sampling settings
      *
      *  \param mode Sensor mode to set
      *  \param temp_sampling Temperature sampling to set
@@ -258,100 +237,91 @@ public:
             SensorFilter filter = SensorFilter::OFF, StandbyDuration duration =
                     StandbyDuration::MS_0_5);
 
-    /*!
-     *  \return Chip ID
+    /*! Get Chip ID
      */
-    char get_chip_id()
-    {
-        return _chip_id;
-    }
+    int8_t chip_id();
 
-    bme280_settings_t get_settings()
-    {
-        return settings;
-    }
+    /*! Get settings
+     */
+    bme280_settings_t settings();
 
 private:
-    char _chip_id = 0;
+    int8_t _chip_id = 0;
     I2C *_i2c;
     I2CAddress _i2c_address;
     SensorMode _sensor_mode;
-    bme280_settings_t settings;
-    bme280_calib_data_t calib;
-    bme280_raw_data_t uncomp_data;
-    int32_t t_fine;
+    bme280_settings_t _settings;
+    bme280_calib_data_t _calibration_data;
+    bme280_raw_data_t _uncomp_data;
+    int32_t _t_fine;
 
-    /*!
-     *  Private function to check chip ID correctness
+    /*! Private function to check chip ID correctness
      *
      *  \return true on success, false on failure
      */
     bool read_chip_id();
 
-    /*!
-     *  Read and store calibration data
+    /*! Read and store calibration data
      */
-    void get_calib();
+    void calibration();
 
-    /*!
-     *  Parse raw data: pressure, humidity and temperature, then store it to
+    /*! Parse raw data: pressure, humidity and temperature, then store it to
      *  uncomp_data attribute
      */
-    void get_raw_data();
+    void raw_data();
 
-    /*! Set power mode
+    /*! Read register data
      *
-     *  \param mode Power mode
-     *  \return 0 on success, 1 on failure
-     */
-    int write_power_mode(SensorMode mode);
-
-    /*!
-     *  Read register data
-     *
-     *  \param register_address Address of the register
-     *  \param value Pointer to the value read from the register
-     *  \return 0 on success, 1 on failure
+     * \param register_address Address of the register
+     * \param value Pointer to the value read from the register
+     * \return 0 on success, 1 on failure
      */
     int i2c_read_register(RegisterAddress register_address, int8_t *value);
 
-    /*!
-     *  Read two successive registers data
-     *  \note This function is useful to read memory-contiguous LSB/MSB registers
+    /*! Read two successive registers data
+     * \brief This function is useful to read memory-contiguous LSB/MSB registers
      *
-     *  \param register_address Address of the first register
-     *  \param value Array to store read data
-     *  \return 0 on success, 1 on failure
+     * \param register_address Address of the first register
+     * \param value Array to store read data
+     *
+     * \return 0 on success, 1 on failure
      */
     int i2c_read_two_bytes(RegisterAddress register_address, int8_t value[2]);
 
-    /*!
-     *  Read three successive registers data
-     *  \note This function is useful to read memory-contiguous LSB/MSB/XLSB registers
+    /*! Read three successive registers data
+     * \note This function is useful to read memory-contiguous LSB/MSB/XLSB registers
      *
-     *  \param register_address Address of the first register
-     *  \param value Array to store the read data
-     *  \return 0 on success, 1 on failure
+     * \param register_address Address of the first register
+     * \param value Array to store the read data
+     * \return 0 on success, 1 on failure
      */
     int i2c_read_three_bytes(RegisterAddress register_address, int8_t value[3]);
 
-    /*!
-     *  Read a 16 bits signed vector (3 dimensions) continuous read
+    /*! Read a 16 bits signed vector (3 dimensions) continuous read
      *
-     *  \param register_address Address of the register containing the LSB
-     *  of the first axis value Array to store the read values
-     *  \return 0 on success, 1 on failure
+     * \param register_address Address of the register containing the LSB of the first axis value Array to store the read values
+     * \return 0 on success, 1 on failure
      */
     int i2c_read_vector(RegisterAddress register_address, int16_t value[3]);
 
-    /*!
-     *  Write to a register
+    /*! Write to a register
      *
-     *  \param register_address Address of the register to write to
-     *  \param value Data to store in the register
-     *  \return 0 on success, 1 on failure
+     * \param register_address Address of the register to write to
+     * \param value Data to store in the register
+     * \return 0 on success, 1 on failure
      */
     int i2c_write_register(RegisterAddress register_address, int8_t value);
+
+    /*! Read multiple bytes
+     *
+     * \param register_address Address of the register to write to
+     * \param size size of data to stored
+     * \param data Data to store the read values
+     *
+     * \returns 0 on success,
+     *          1 on failure
+     */
+    int i2c_read_multiple_bytes(RegisterAddress register_address, size_t size, void *data);
 };
 
 } // namespace sixtron
