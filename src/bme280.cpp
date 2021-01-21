@@ -90,7 +90,7 @@ bool BME280::initialize()
     }
 
     // wait for chip to wake up
-    ThisThread::sleep_for(1);
+    ThisThread::sleep_for(1ms);
 
     get_calib();
 
@@ -102,7 +102,7 @@ int BME280::reset()
     if (i2c_write_register(RegisterAddress::RESET, SOFTRESET_CMD) != SUCCESS) {
         return FAILURE;
     }
-    ThisThread::sleep_for(2);
+    ThisThread::sleep_for(2ms);
     return SUCCESS;
 }
 
@@ -244,7 +244,7 @@ void BME280::take_forced_measurement()
             if (!(data & 0x08)) { // STATUS measuring[0] bit (0 when the results have been transferred to the data registers)
                 break;
             }
-            ThisThread::sleep_for(1);
+            ThisThread::sleep_for(1ms);
         }
     }
 }
@@ -310,7 +310,7 @@ bool BME280::read_chip_id()
         return FAILURE;
     }
     if (chip_id != CHIP) {
-        ThisThread::sleep_for(1000);
+        ThisThread::sleep_for(1s);
         i2c_read_register(RegisterAddress::CHIP_ID, &chip_id);
         return (chip_id != CHIP) ? false : true;
     }
